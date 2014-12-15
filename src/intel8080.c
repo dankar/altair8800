@@ -3,12 +3,7 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-
-#ifdef WIN32
-	#include <Windows.h>
-#else
-	#include <unistd.h>
-#endif
+#include <Windows.h>
 
 uint8_t get_parity(uint8_t val)
 {
@@ -806,6 +801,7 @@ void i8080_ani(intel8080_t *cpu)
 		cpu->registers.pc++;
 		cpu->registers.a &= cpu->data_bus;
 		i8080_clear_flag(cpu, FLAGS_CARRY);
+		i8080_clear_flag(cpu, FLAGS_H);
 		i8080_update_flags(cpu, REGISTER_A, FLAGS_ZERO | FLAGS_SIGN | FLAGS_PARITY | FLAGS_CARRY | FLAGS_H);
 		break;
 	}
@@ -823,6 +819,7 @@ void i8080_ora(intel8080_t *cpu)
 		cpu->registers.pc++;
 		cpu->registers.a |= i8080_regread(cpu, source);
 		i8080_clear_flag(cpu, FLAGS_CARRY);
+		i8080_clear_flag(cpu, FLAGS_H);
 		i8080_update_flags(cpu, REGISTER_A, FLAGS_ZERO | FLAGS_SIGN | FLAGS_PARITY | FLAGS_CARRY | FLAGS_H);
 	}
 
@@ -841,6 +838,7 @@ void i8080_ori(intel8080_t *cpu)
 		cpu->registers.pc++;
 		cpu->registers.a |= cpu->data_bus;
 		i8080_clear_flag(cpu, FLAGS_CARRY);
+		i8080_clear_flag(cpu, FLAGS_H);
 		i8080_update_flags(cpu, REGISTER_A, FLAGS_ZERO | FLAGS_SIGN | FLAGS_PARITY | FLAGS_CARRY | FLAGS_H);
 		break;
 	}
@@ -858,6 +856,7 @@ void i8080_xra(intel8080_t *cpu)
 		cpu->registers.pc++;
 		cpu->registers.a ^= i8080_regread(cpu, source);
 		i8080_clear_flag(cpu, FLAGS_CARRY);
+		i8080_clear_flag(cpu, FLAGS_H);
 		i8080_update_flags(cpu, REGISTER_A, FLAGS_ZERO | FLAGS_SIGN | FLAGS_PARITY | FLAGS_CARRY | FLAGS_H);
 	}
 
@@ -876,6 +875,7 @@ void i8080_xri(intel8080_t *cpu)
 		cpu->registers.pc++;
 		cpu->registers.a ^= cpu->data_bus;
 		i8080_clear_flag(cpu, FLAGS_CARRY);
+		i8080_clear_flag(cpu, FLAGS_H);
 		i8080_update_flags(cpu, REGISTER_A, FLAGS_ZERO | FLAGS_SIGN | FLAGS_PARITY | FLAGS_CARRY | FLAGS_H);
 		break;
 	}
@@ -980,11 +980,7 @@ void i8080_in(intel8080_t *cpu)
 		default:
 			cpu->registers.a = 0x00;
 			printf("IN PORT %x\n", cpu->data_bus);
-#ifdef WIN32
 			Sleep(1000);
-#else
-			sleep(1000);
-#endif
 			break;
 		}
 		//Sleep(1000);
@@ -1430,7 +1426,9 @@ void i8080_daa(intel8080_t *cpu)
 		if((val & 0xf) > 9 || cpu->registers.flags & FLAGS_H)
 			add += 0x06;
 
-		if(((val & 0xf0) >> 4) || cpu->registers.flags & FLAGS_CARRY)
+		val += add;
+
+		if(((val & 0xf0) >> 4) > 9 || cpu->registers.flags & FLAGS_CARRY)
 			add += 0x60;
 
 		i8080_genadd(cpu, add);
