@@ -3,7 +3,11 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <Windows.h>
+#ifdef WIN32
+	#include <Windows.h>
+#else
+	#include <unistd.h>
+#endif
 
 uint8_t get_parity(uint8_t val)
 {
@@ -980,10 +984,8 @@ void i8080_in(intel8080_t *cpu)
 		default:
 			cpu->registers.a = 0x00;
 			printf("IN PORT %x\n", cpu->data_bus);
-			Sleep(1000);
 			break;
 		}
-		//Sleep(1000);
 		break;
 	}
 
@@ -1021,10 +1023,8 @@ void i8080_out(intel8080_t *cpu)
 			break;
 		default:
 			printf("OUT PORT %x, DATA: %x\n", cpu->data_bus, cpu->registers.a);
-			//Sleep(1000);
 			break;
 		}
-		//Sleep(1000);
 		break;
 	}
 
