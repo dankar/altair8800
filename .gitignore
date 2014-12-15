@@ -87,6 +87,8 @@ dlldata.c
 *.pidb
 *.svclog
 *.scc
+*.suo
+*.vcxproj.user
 
 # Chutzpah Test files
 _Chutzpah*
