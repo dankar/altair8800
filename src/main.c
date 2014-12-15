@@ -2,12 +2,30 @@
 #include <stdlib.h>
 #include "intel8080.h"
 #include "88dcdd.h"
-#include <Windows.h>
-#include <WinSock.h>
+#ifdef WIN32
+	#include <Windows.h>
+	#include <WinSock.h>
+#else
+	// socket
+	#include <sys/types.h> 
+	#include <sys/socket.h>
+    #include <netinet/in.h>
+    #include <netinet/ip.h>
+	#include <sys/ioctl.h>
+	
+	// strcat
+	#include <string.h>	
+
+	// windows typedefs
+	typedef unsigned long DWORD;
+	typedef unsigned short WORD;
+	typedef unsigned int UNINT32;
+#endif
 
 int sock;
 int client_sock;
 
+#ifdef WIN32
 void dump_regs(intel8080_t *cpu)
 {
 	char data[1024];
@@ -15,6 +33,7 @@ void dump_regs(intel8080_t *cpu)
 	sprintf(data, "%04x\t%02x\t%04x\n", cpu->address_bus, cpu->data_bus, cpu->registers.pc);
 	OutputDebugStringA(data);
 }
+#endif
 
 #ifdef WIN32
 uint8_t key_states[256];
@@ -119,12 +138,19 @@ int main(int argc, char *argv[])
 		printf("Could not start WSA\n");
 		return 1;
 	}
-#endif
 
 	memset(key_states, 0, 256);
 
+#endif
+
+
 	sock = socket(AF_INET, SOCK_STREAM, 0);
+	
+#ifdef WIN32
 	ioctlsocket(sock, FIONBIO, &ok);
+#else
+	ioctl(sock, FIONBIO, &ok);
+#endif
 
 	setsockopt(sock, SOL_SOCKET, SO_LINGER, &yes, sizeof(char));
 	setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, &yes, sizeof(int));
