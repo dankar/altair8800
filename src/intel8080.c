@@ -982,7 +982,7 @@ void i8080_in(intel8080_t *cpu)
 			cpu->registers.a = 0x00;
 			break;
 		default:
-			cpu->registers.a = 0x00;
+			cpu->registers.a = 0xff;
 			printf("IN PORT %x\n", cpu->data_bus);
 			break;
 		}
