@@ -5,8 +5,6 @@
 #include <stdlib.h>
 #ifdef WIN32
 	#include <Windows.h>
-#else
-	#include <unistd.h>
 #endif
 
 uint8_t get_parity(uint8_t val)

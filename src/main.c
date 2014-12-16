@@ -12,6 +12,7 @@
     #include <netinet/in.h>
     #include <netinet/ip.h>
 	#include <sys/ioctl.h>
+	#include <fcntl.h>
 	
 	// strcat
 	#include <string.h>	
@@ -148,8 +149,6 @@ int main(int argc, char *argv[])
 	
 #ifdef WIN32
 	ioctlsocket(sock, FIONBIO, &ok);
-#else
-	ioctl(sock, FIONBIO, &ok);
 #endif
 
 	setsockopt(sock, SOL_SOCKET, SO_LINGER, &yes, sizeof(char));
@@ -173,6 +172,9 @@ int main(int argc, char *argv[])
 		sock_size = sizeof(client_addr);
 		client_sock = accept(sock, &client_addr, &sock_size);
 	}while(client_sock == -1);
+
+	fcntl(client_sock, F_SETFL, O_NONBLOCK);
+
 	printf("Got connection? (%d)\n", client_sock);
 
 	disk_controller.disk_function = disk_function;
