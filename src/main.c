@@ -16,11 +16,6 @@
 	
 	// strcat
 	#include <string.h>	
-
-	// windows typedefs
-	typedef unsigned long DWORD;
-	typedef unsigned short WORD;
-	typedef unsigned int UNINT32;
 #endif
 
 int sock;
@@ -119,7 +114,7 @@ int main(int argc, char *argv[])
 {
 	FILE* fp;
 	size_t size;
-	DWORD written;
+	unsigned int written;
 	uint32_t counter = 0;
 	unsigned long ok = 1;
 	char yes = 1;
