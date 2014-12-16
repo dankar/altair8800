@@ -173,7 +173,9 @@ int main(int argc, char *argv[])
 		client_sock = accept(sock, &client_addr, &sock_size);
 	}while(client_sock == -1);
 
+#ifndef WIN32
 	fcntl(client_sock, F_SETFL, O_NONBLOCK);
+#endif
 
 	printf("Got connection? (%d)\n", client_sock);
 
