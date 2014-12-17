@@ -236,7 +236,7 @@ int main(int argc, char *argv[])
 	disk_drive.disk2.fp = fopen("software/empty.dsk", "r+b");
 	disk_drive.nodisk.status = 0xff;
 
-	i8080_examine(&cpu, 0xff00); // ff00 loads from disk, 0000 loads basic
+	i8080_examine(&cpu, 0x0000); // ff00 loads from disk, 0000 loads basic
 	while(1)
 	{
 #ifdef WIN32
@@ -250,7 +250,6 @@ int main(int argc, char *argv[])
 		i8080_cycle(&cpu);
 
 		//dump_regs(&cpu);
-		//Sleep(1);
 	}
 
 	return 0;

@@ -48,7 +48,6 @@ int i8080_check_half_carry(uint8_t a, uint8_t b)
 		return 0;
 }
 
-
 void i8080_mwrite(intel8080_t *cpu)
 {
 	{
@@ -272,7 +271,7 @@ void i8080_gensub(intel8080_t *cpu, uint8_t val)
 	else
 		i8080_clear_flag(cpu, FLAGS_CARRY);
 
-	if(a & 0xf > cpu->registers.a & 0xf)
+	if((a & 0xf) > (cpu->registers.a & 0xf))
 		i8080_clear_flag(cpu, FLAGS_H);
 	else
 		i8080_set_flag(cpu, FLAGS_H);
@@ -285,9 +284,7 @@ void i8080_gensub(intel8080_t *cpu, uint8_t val)
 void i8080_compare(intel8080_t *cpu, uint8_t val)
 {
 	uint8_t tmp_a = cpu->registers.a;
-
 	i8080_gensub(cpu, val);
-
 	cpu->registers.a = tmp_a;
 }
 
@@ -359,7 +356,7 @@ uint8_t i8080_sta(intel8080_t *cpu)
 
 uint8_t i8080_lhld(intel8080_t *cpu)
 {
-	cpu->registers.hl =  cpu->read16(cpu->read16(cpu->registers.pc+1));
+	cpu->registers.hl = cpu->read16(cpu->read16(cpu->registers.pc+1));
 	cpu->registers.pc+=3;
 	return CYCLES_LHLD;
 }
@@ -553,7 +550,7 @@ uint8_t i8080_dcx(intel8080_t *cpu)
 uint8_t i8080_dad(intel8080_t *cpu)
 {
 	uint8_t rp = RP(cpu->current_op_code);
-	uint32_t val = i8080_pairread(cpu, rp);	
+	uint32_t val = i8080_pairread(cpu, rp);
 	val += i8080_pairread(cpu, PAIR_HL);
 
 	if(val > 0xffff)
@@ -1133,7 +1130,5 @@ void i8080_cycle(intel8080_t *cpu)
 		printf("Unknown opcode!\n");
 		while(1);
 	}
-
-
 	i8080_fetch_next_op(cpu);
 }
