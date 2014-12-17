@@ -21,15 +21,12 @@
 int sock;
 int client_sock;
 
-#ifdef WIN32
 void dump_regs(intel8080_t *cpu)
 {
 	char data[1024];
 
-	sprintf(data, "%04x\t%02x\t%04x\n", cpu->address_bus, cpu->data_bus, cpu->registers.pc);
-	OutputDebugStringA(data);
+	printf("%04x\t%02x\t%04x\tC: %02x\tD: %02x\tE: %02x\n", cpu->address_bus, cpu->data_bus, cpu->registers.pc, cpu->registers.c, cpu->registers.d, cpu->registers.e);
 }
-#endif
 
 #ifdef WIN32
 uint8_t key_states[256];
@@ -64,6 +61,8 @@ uint8_t term_in()
 	}
 	else
 	{
+		if(b == 10)
+			b = 13;
 		return b;
 	}
 }
@@ -102,7 +101,6 @@ const char *byte_to_binary(int x)
     static char b[9];
     b[0] = '\0';
 
- 
     for (z = 128; z > 0; z >>= 1)
     {
         strcat(b, ((x & z) == z) ? "1" : "0");
@@ -148,6 +146,8 @@ int main(int argc, char *argv[])
 	intel8080_t cpu;
 	int result;
 
+	memset(memory, 0, 64*1024);
+
 #ifdef WIN32
 	WSADATA wsaData;
 
@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
 
 
 	sock = socket(AF_INET, SOCK_STREAM, 0);
-	
+
 #ifdef WIN32
 	ioctlsocket(sock, FIONBIO, &ok);
 #endif
@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
 	}
 
 	printf("Waiting for terminal...\n");
-	
+
 	do
 	{
 		listen(sock, 1);
@@ -213,7 +213,15 @@ int main(int argc, char *argv[])
 	fread(&memory[0xff00], 1, size, fp);
 	fclose(fp);
 
-	i8080_examine(&cpu, 0x00);
+	// Load basic into memory
+	fp = fopen("software/4kbas32.bin", "rb");
+	fseek(fp, 0, SEEK_END);
+	size = ftell(fp);
+	fseek(fp, 0, SEEK_SET);
+	fread(&memory[0x0000], 1, size, fp);
+	fclose(fp);
+
+	/*i8080_examine(&cpu, 0x00);
         i8080_deposit(&cpu, 0x06);
         i8080_deposit_next(&cpu, 'C');
         i8080_deposit_next(&cpu, 0x78);
@@ -221,15 +229,14 @@ int main(int argc, char *argv[])
         i8080_deposit_next(&cpu, 0x01);
         i8080_deposit_next(&cpu, 0xc3);
         i8080_deposit_next(&cpu, 0x00);
-        i8080_deposit_next(&cpu, 0x00);
+        i8080_deposit_next(&cpu, 0x00);*/
 
 	// Mount diskette 1 (CP/M OS) and 2 (Tools)
 	disk_drive.disk1.fp = fopen("software/Cpm22.dsk", "r+b");
 	disk_drive.disk2.fp = fopen("software/empty.dsk", "r+b");
 	disk_drive.nodisk.status = 0xff;
 
-	i8080_examine(&cpu, 0xff00);
-	
+	i8080_examine(&cpu, 0xff00); // ff00 loads from disk, 0000 loads basic
 	while(1)
 	{
 #ifdef WIN32

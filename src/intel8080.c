@@ -263,9 +263,8 @@ void i8080_update_flags(intel8080_t *cpu, uint8_t reg, uint8_t mask)
 
 void i8080_gensub(intel8080_t *cpu, uint8_t val)
 {
-	uint8_t a;
+	uint8_t a = cpu->registers.a;
 
-	a = cpu->registers.a;
 	a = a - val;
 
 	if(a > cpu->registers.a)
@@ -273,7 +272,7 @@ void i8080_gensub(intel8080_t *cpu, uint8_t val)
 	else
 		i8080_clear_flag(cpu, FLAGS_CARRY);
 
-	if((a & 0xf) > (cpu->registers.a & 0xf))
+	if(a & 0xf > cpu->registers.a & 0xf)
 		i8080_clear_flag(cpu, FLAGS_H);
 	else
 		i8080_set_flag(cpu, FLAGS_H);

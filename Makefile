@@ -1,5 +1,5 @@
 CC=gcc
-CFLAGS=-I. $(OPTFLAGS)
+CFLAGS=-I. $(OPTFLAGS) -DMEMORY_SIZE=65536
 LIBS=$(OPTLIBS)
 SOURCES=$(wildcard src/**/*.c src/*.c)
 OBJECTS=$(patsubst %.c,%.o,$(SOURCES))
