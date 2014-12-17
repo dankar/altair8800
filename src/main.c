@@ -191,13 +191,23 @@ int main(int argc, char *argv[])
 	fread(&cpu.memory[0xff00], 1, size, fp);
 	fclose(fp);
 
+	i8080_examine(&cpu, 0x00);
+        i8080_deposit(&cpu, 0x06);
+        i8080_deposit_next(&cpu, 'C');
+        i8080_deposit_next(&cpu, 0x78);
+        i8080_deposit_next(&cpu, 0xD3);
+        i8080_deposit_next(&cpu, 0x01);
+        i8080_deposit_next(&cpu, 0xc3);
+        i8080_deposit_next(&cpu, 0x00);
+        i8080_deposit_next(&cpu, 0x00);
+
 	// Mount diskette 1 (CP/M OS) and 2 (Tools)
 	disk_drive.disk1.fp = fopen("software/Cpm22.dsk", "r+b");
 	disk_drive.disk2.fp = fopen("software/empty.dsk", "r+b");
 	disk_drive.nodisk.status = 0xff;
 
 	i8080_examine(&cpu, 0xff00);
-
+	
 	while(1)
 	{
 #ifdef WIN32
@@ -210,6 +220,7 @@ int main(int argc, char *argv[])
 		//	__asm int 3;
 		i8080_cycle(&cpu);
 		i8080_sync(&cpu);
+
 		//dump_regs(&cpu);
 		//Sleep(1);
 	}

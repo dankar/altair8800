@@ -9,14 +9,10 @@
 
 uint8_t get_parity(uint8_t val)
 {
-	uint8_t parity = 1;
-	while(val)
-	{
-		parity = !parity;
-		val = val & (val - 1);
-	}
-
-	return parity;
+	//uint8_t parity = 1;
+	val ^= val >> 4;
+	val &= 0xf;
+	return !((0x6996 >> val) & 1);
 }
 
 void i8080_reset(intel8080_t *cpu, port_in in, port_out out, disk_controller_t *disk_controller)
@@ -28,20 +24,19 @@ void i8080_reset(intel8080_t *cpu, port_in in, port_out out, disk_controller_t *
 	cpu->registers.flags = 0x2;
 }
 
-int i8080_check_carry(uint16_t a, uint16_t b)
+int i8080_check_carry(uint8_t a, uint8_t b)
 {
-	if((a + b) > 0xff)
+	b += a;
+	if(b < a)
 		return 1;
 	else
 		return 0;
 }
 
-int i8080_check_half_carry(uint16_t a, uint16_t b)
+int i8080_check_half_carry(uint8_t a, uint8_t b)
 {
-	a &= 0xf;
-	b &= 0xf;
-
-	if((a + b) > 0xf)
+	b += a;
+	if((b & 0xf) < (a & 0xf))
 		return 1;
 	else
 		return 0;
@@ -60,6 +55,27 @@ void i8080_mread(intel8080_t *cpu)
 	{
 		cpu->data_bus = cpu->memory[cpu->address_bus];
 	}
+}
+
+uint8_t i8080_get_8(intel8080_t *cpu, uint16_t address)
+{
+	return cpu->memory[address];
+}
+
+void i8080_set_8(intel8080_t *cpu, uint16_t address, uint8_t val)
+{
+	cpu->memory[address] = val;
+}
+
+
+uint16_t i8080_get_16(intel8080_t *cpu, uint16_t address)
+{
+	return *(uint16_t*)&cpu->memory[address];
+}
+
+void i8080_set_16(intel8080_t *cpu, uint16_t address, uint16_t val)
+{
+	*(uint16_t*)&cpu->memory[address] = val;
 }
 
 void i8080_pairwrite(intel8080_t *cpu, uint8_t pair, uint16_t val)
@@ -194,14 +210,9 @@ uint8_t i8080_check_condition(intel8080_t *cpu, uint8_t condition)
 
 void i8080_examine(intel8080_t *cpu, uint16_t address)
 {
-	cpu->data_bus = OP_JMP;
-	i8080_cycle(cpu);
-	cpu->data_bus = address & 0xff;
-	i8080_cycle(cpu);
-	cpu->data_bus = (address >> 8) & 0xff;
-	i8080_cycle(cpu);
-
-	i8080_sync(cpu);
+	// Jump to the supplied address
+	cpu->registers.pc = cpu->address_bus = address;
+	cpu->data_bus = i8080_get_8(cpu, cpu->address_bus);
 }
 
 void i8080_examine_next(intel8080_t *cpu)
@@ -271,25 +282,22 @@ void i8080_update_flags(intel8080_t *cpu, uint8_t reg, uint8_t mask)
 
 void i8080_gensub(intel8080_t *cpu, uint8_t val)
 {
-	uint16_t a, b;
-	// Subtract by adding with two-complement of val. Carry-flag meaning becomes inverted since we add.
-	a = cpu->registers.a;
-	b = 0x100 - val;
-
-	if(i8080_check_half_carry(a, b))
-		i8080_set_flag(cpu, FLAGS_H);
-	else
-		i8080_clear_flag(cpu, FLAGS_H);
+	uint8_t a;
 	
+	a = cpu->registers.a;
+	a = a - val;
 
-	if(i8080_check_carry(a, b))
-		i8080_clear_flag(cpu, FLAGS_CARRY);
-	else
+	if(a > cpu->registers.a)
 		i8080_set_flag(cpu, FLAGS_CARRY);
+	else
+		i8080_clear_flag(cpu, FLAGS_CARRY);
 
-	a += b ;
+	if((a & 0xf) > (cpu->registers.a & 0xf))
+		i8080_clear_flag(cpu, FLAGS_H);
+	else
+		i8080_set_flag(cpu, FLAGS_H);
 
-	cpu->registers.a = a & 0xff;
+	cpu->registers.a = a;
 
 	i8080_update_flags(cpu, REGISTER_A, FLAGS_ZERO | FLAGS_SIGN | FLAGS_PARITY | FLAGS_CARRY | FLAGS_H);
 }
@@ -303,7 +311,7 @@ void i8080_compare(intel8080_t *cpu, uint8_t val)
 	cpu->registers.a = tmp_a;
 }
 
-void i8080_mov(intel8080_t *cpu)
+uint8_t i8080_mov(intel8080_t *cpu)
 {
 	uint8_t dest = DESTINATION(cpu->current_op_code);
 	uint8_t source = SOURCE(cpu->current_op_code);
@@ -315,19 +323,14 @@ void i8080_mov(intel8080_t *cpu)
 	else
 		cycles = CYCLES_MOV_REG;
 
-
-	if(cpu->decoder_step == 0)
-	{
-		val = i8080_regread(cpu, source);
-		i8080_regwrite(cpu, dest, val);
-		cpu->registers.pc++;
-	}
+	val = i8080_regread(cpu, source);
+	i8080_regwrite(cpu, dest, val);
+	cpu->registers.pc++;
 	
-	if(++cpu->decoder_step > cycles)
-		cpu->decoder_step = 0;
+	return cycles;
 }
 
-void i8080_mvi(intel8080_t *cpu)
+uint8_t i8080_mvi(intel8080_t *cpu)
 {
 	uint8_t dest = DESTINATION(cpu->current_op_code);
 	uint8_t cycles;
@@ -337,1073 +340,669 @@ void i8080_mvi(intel8080_t *cpu)
 	else
 		cycles = CYCLES_MVI_REG;
 
-	switch(cpu->decoder_step)
-	{
-	case 0:
-		cpu->registers.pc++;
-		break;
-	case 1:
-		i8080_regwrite(cpu, dest, cpu->data_bus);
-		cpu->registers.pc++;
-		break;
-	}
+	i8080_regwrite(cpu, dest, cpu->memory[cpu->registers.pc+1]);
+		
+	cpu->registers.pc+=2;
 	
-	if(++cpu->decoder_step == cycles)
-		cpu->decoder_step = 0;
+	return cycles;
 }
 
-void i8080_lxi(intel8080_t *cpu)
+uint8_t i8080_lxi(intel8080_t *cpu)
 {
 	uint8_t pair = RP(cpu->current_op_code);
-	switch(cpu->decoder_step)
-	{
-	case 0:
-		cpu->registers.pc++;
-		break;
-	case 1:
-		cpu->registers.pc++;
-		cpu->decoder_state = cpu->data_bus;
-		break;
-	case 2:
-		cpu->registers.pc++;
-		i8080_pairwrite(cpu, pair, cpu->decoder_state | cpu->data_bus << 8);
-		break;
-	}
+	
+	i8080_pairwrite(cpu, pair, i8080_get_16(cpu, cpu->registers.pc+1));
+	cpu->registers.pc+=3;
 
-	if(++cpu->decoder_step == CYCLES_LXI)
-		cpu->decoder_step = 0;
+	return CYCLES_LXI;
 }
 
-void i8080_lda(intel8080_t *cpu)
+uint8_t i8080_lda(intel8080_t *cpu)
 {
-	switch(cpu->decoder_step)
-	{
-	case 0:
-		cpu->registers.pc++;
-		break;
-	case 1:
-		cpu->registers.pc++;
-		cpu->decoder_state = cpu->data_bus;
-		break;
-	case 2:
-		cpu->registers.pc++;
+	cpu->address_bus = i8080_get_16(cpu, cpu->registers.pc+1);
+	i8080_mread(cpu);
+	cpu->registers.a = cpu->data_bus;
 
-		cpu->address_bus = cpu->decoder_state | cpu->data_bus << 8;
-		i8080_mread(cpu);
-		cpu->registers.a = cpu->data_bus;
-		break;
-	}
-
-	if(++cpu->decoder_step == CYCLES_LDA)
-		cpu->decoder_step = 0;
+	cpu->registers.pc+=3;
+	return CYCLES_LDA;
 }
 
-void i8080_sta(intel8080_t *cpu)
+uint8_t i8080_sta(intel8080_t *cpu)
 {
-	switch(cpu->decoder_step)
-	{
-	case 0:
-		cpu->registers.pc++;
-		break;
-	case 1:
-		cpu->registers.pc++;
-		cpu->decoder_state = cpu->data_bus;
-		break;
-	case 2:
-		cpu->registers.pc++;
-		cpu->address_bus = cpu->decoder_state | cpu->data_bus << 8;
-		cpu->data_bus = cpu->registers.a;
-		i8080_mwrite(cpu);
-		break;
-	}
+	cpu->address_bus = i8080_get_16(cpu, cpu->registers.pc+1);
+	cpu->data_bus = cpu->registers.a;
+	i8080_mwrite(cpu);
 
-	if(++cpu->decoder_step == CYCLES_STA)
-		cpu->decoder_step = 0;
+	cpu->registers.pc+=3;
+	return CYCLES_STA;
 }
 
-void i8080_lhld(intel8080_t *cpu)
+uint8_t i8080_lhld(intel8080_t *cpu)
 {
-	switch(cpu->decoder_step)
-	{
-	case 0:
-		cpu->registers.pc++;
-		break;
-	case 1:
-		cpu->registers.pc++;
-		cpu->decoder_state = cpu->data_bus;
-		break;
-	case 2:
-		cpu->registers.pc++;
-		cpu->registers.hl =  *(uint16_t*)&cpu->memory[cpu->decoder_state | cpu->data_bus << 8];
-		break;
-	}
-
-	if(++cpu->decoder_step == CYCLES_LHLD)
-		cpu->decoder_step = 0;
+	cpu->registers.hl =  i8080_get_16(cpu, i8080_get_16(cpu, cpu->registers.pc+1));
+	cpu->registers.pc+=3;
+	return CYCLES_LHLD;
 }
 
-void i8080_shld(intel8080_t *cpu)
+uint8_t i8080_shld(intel8080_t *cpu)
 {
-	switch(cpu->decoder_step)
-	{
-	case 0:
-		cpu->registers.pc++;
-		break;
-	case 1:
-		cpu->registers.pc++;
-		cpu->decoder_state = cpu->data_bus;
-		break;
-	case 2:
-		cpu->registers.pc++;
-		*(uint16_t*)&cpu->memory[cpu->decoder_state | cpu->data_bus << 8] = cpu->registers.hl;
-		break;
-	}
-
-	if(++cpu->decoder_step == CYCLES_SHLD)
-		cpu->decoder_step = 0;
+	i8080_set_16(cpu, i8080_get_16(cpu, cpu->registers.pc+1), cpu->registers.hl);
+	cpu->registers.pc+=3;
+	return CYCLES_SHLD; 
 }
 
 // TODO: only BC and DE allowed for indirect
-void i8080_ldax(intel8080_t *cpu)
+uint8_t i8080_ldax(intel8080_t *cpu)
 {
 	uint8_t pair = RP(cpu->current_op_code);
 
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-		cpu->address_bus = i8080_pairread(cpu, pair);
-		i8080_mread(cpu);
-		cpu->registers.a = cpu->data_bus;
-	}
-	if(++cpu->decoder_step == CYCLES_LDAX)
-		cpu->decoder_step = 0;
+	cpu->registers.a = i8080_get_8(cpu, i8080_pairread(cpu, pair));
+	cpu->registers.pc++;
+	return CYCLES_LDAX;
 }
 
 // TODO: only BC and DE allowed for indirect
-void i8080_stax(intel8080_t *cpu)
+uint8_t i8080_stax(intel8080_t *cpu)
 {
 	uint8_t pair = RP(cpu->current_op_code);
-
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-		cpu->address_bus = i8080_pairread(cpu, pair);
-		cpu->data_bus = cpu->registers.a;
-		i8080_mwrite(cpu);
-	}
-
-	if(++cpu->decoder_step == CYCLES_STAX)
-		cpu->decoder_step = 0;
+	i8080_set_8(cpu, i8080_pairread(cpu, pair), cpu->registers.a);
+	cpu->registers.pc++;
+	return CYCLES_STAX;
 }
 
-void i8080_xchg(intel8080_t *cpu)
+uint8_t i8080_xchg(intel8080_t *cpu)
 {
 	uint16_t tmp = cpu->registers.hl;
+	cpu->registers.hl = cpu->registers.de;
+	cpu->registers.de = tmp;
+	cpu->registers.pc++;
 
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-		cpu->registers.hl = cpu->registers.de;
-		cpu->registers.de = tmp;
-	}
-	if(++cpu->decoder_step == CYCLES_XCHG)
-		cpu->decoder_step = 0;
+	return CYCLES_XCHG;
 }
 
-void i8080_genadd(intel8080_t *cpu, uint16_t val)
+void i8080_genadd(intel8080_t *cpu, uint8_t val)
 {
 	uint8_t a;
 
-	a = i8080_regread(cpu, REGISTER_A);
+	a = cpu->registers.a + val;
 
-	if(i8080_check_half_carry(a, val))
-		i8080_set_flag(cpu, FLAGS_H);
-	else
-		i8080_clear_flag(cpu, FLAGS_H);
-
-	if(i8080_check_carry(a, val))
+	if(i8080_check_carry(cpu->registers.a, val))
 		i8080_set_flag(cpu, FLAGS_CARRY);
 	else
 		i8080_clear_flag(cpu, FLAGS_CARRY);
 
-	cpu->registers.a += val;
+	if(i8080_check_half_carry(cpu->registers.a, val))
+		i8080_set_flag(cpu, FLAGS_H);
+	else
+		i8080_clear_flag(cpu, FLAGS_H);
+
+	cpu->registers.a = a;
 
 	i8080_update_flags(cpu, REGISTER_A, FLAGS_ZERO | FLAGS_SIGN | FLAGS_PARITY | FLAGS_CARRY | FLAGS_H);
 }
 
 
-void i8080_add(intel8080_t *cpu)
+uint8_t i8080_add(intel8080_t *cpu)
 {
 	uint8_t source = SOURCE(cpu->current_op_code);
-
-	uint16_t val = i8080_regread(cpu, source);
-	
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-		i8080_genadd(cpu, val);
-	}
-
-	if(++cpu->decoder_step == CYCLES_ADD)
-		cpu->decoder_step = 0;
-}
-
-void i8080_adi(intel8080_t *cpu)
-{
-	switch(cpu->decoder_step)
-	{
-	case 0:
-		cpu->registers.pc++;
-		break;
-	case 1:
-		cpu->registers.pc++;
-		i8080_genadd(cpu, cpu->data_bus);
-		break;
-	}
-
-	if(++cpu->decoder_step == CYCLES_ADI)
-		cpu->decoder_step = 0;
-}
-
-void i8080_adc(intel8080_t *cpu)
-{
-	uint8_t source = SOURCE(cpu->current_op_code);
-
-	uint16_t val = i8080_regread(cpu, source);
-
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-		if(cpu->registers.flags & FLAGS_CARRY)
-			val++;
-		i8080_genadd(cpu, val);
-	}
-
-	if(++cpu->decoder_step == CYCLES_ADC)
-		cpu->decoder_step = 0;
-}
-
-void i8080_aci(intel8080_t *cpu)
-{
-	uint16_t val;
-	switch(cpu->decoder_step)
-	{
-	case 0:
-		cpu->registers.pc++;
-		break;
-	case 1:
-		cpu->registers.pc++;
-		val = cpu->data_bus;
-		if(cpu->registers.flags & FLAGS_CARRY)
-			val++;
-		i8080_genadd(cpu, val);
-		break;
-	}
-
-	if(++cpu->decoder_step == CYCLES_ACI)
-		cpu->decoder_step = 0;
-}
-
-
-
-void i8080_sub(intel8080_t *cpu)
-{
-	uint8_t source = SOURCE(cpu->current_op_code);
-
 	uint8_t val = i8080_regread(cpu, source);
-	
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
+	i8080_genadd(cpu, val);
+	cpu->registers.pc++;
+	return CYCLES_ADD;
+}
+
+uint8_t i8080_adi(intel8080_t *cpu)
+{
+	i8080_genadd(cpu, i8080_get_8(cpu, cpu->registers.pc+1));
+	cpu->registers.pc+=2;
+	return CYCLES_ADI;
+}
+
+uint8_t i8080_adc(intel8080_t *cpu)
+{
+	uint8_t source = SOURCE(cpu->current_op_code);
+	uint8_t val = i8080_regread(cpu, source);
 		
-		i8080_gensub(cpu, val);
-	}
-
-	if(++cpu->decoder_step == CYCLES_SUB)
-		cpu->decoder_step = 0;
+	if(cpu->registers.flags & FLAGS_CARRY)
+		val++;
+	i8080_genadd(cpu, val);
+	cpu->registers.pc++;
+	return CYCLES_ADC;
 }
 
-void i8080_sui(intel8080_t *cpu)
-{
-	switch(cpu->decoder_step)
-	{
-	case 0:
-		cpu->registers.pc++;
-		break;
-	case 1:
-		cpu->registers.pc++;
-		i8080_gensub(cpu, cpu->data_bus);
-		break;
-	}
-
-	if(++cpu->decoder_step == CYCLES_SUI)
-		cpu->decoder_step = 0;
-}
-
-void i8080_sbb(intel8080_t *cpu)
-{
-	uint8_t source = SOURCE(cpu->current_op_code);
-	uint8_t val = i8080_regread(cpu, source);
-
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-		if(cpu->registers.flags & FLAGS_CARRY)
-			val++;
-
-		i8080_gensub(cpu, val);
-	}
-
-	if(++cpu->decoder_step == CYCLES_SBB)
-		cpu->decoder_step = 0;
-}
-
-void i8080_sbi(intel8080_t *cpu)
+uint8_t i8080_aci(intel8080_t *cpu)
 {
 	uint8_t val;
-	switch(cpu->decoder_step)
-	{
-	case 0:
-		cpu->registers.pc++;
-		break;
-	case 1:
-		cpu->registers.pc++;
-		val = cpu->data_bus;
-		if(cpu->registers.flags & FLAGS_CARRY)
-			val++;
-		i8080_gensub(cpu, val);
-		break;
-	}
-
-	if(++cpu->decoder_step == CYCLES_SBI)
-		cpu->decoder_step = 0;
+	val = i8080_get_8(cpu, cpu->registers.pc+1);
+	if(cpu->registers.flags & FLAGS_CARRY)
+		val++;
+	i8080_genadd(cpu, val);
+	cpu->registers.pc+=2;
+	return CYCLES_ACI;
 }
 
-void i8080_inr(intel8080_t *cpu)
+uint8_t i8080_sub(intel8080_t *cpu)
+{
+	uint8_t source = SOURCE(cpu->current_op_code);
+	uint8_t val = i8080_regread(cpu, source);
+	i8080_gensub(cpu, val);
+	cpu->registers.pc++;
+	return CYCLES_SUB;
+}
+
+uint8_t i8080_sui(intel8080_t *cpu)
+{
+	i8080_gensub(cpu, i8080_get_8(cpu, cpu->registers.pc+1));
+	cpu->registers.pc+=2;
+	return CYCLES_SUI;
+}
+
+uint8_t i8080_sbb(intel8080_t *cpu)
+{
+	uint8_t source = SOURCE(cpu->current_op_code);
+	uint8_t val = i8080_regread(cpu, source);
+
+	if(cpu->registers.flags & FLAGS_CARRY)
+		val++;
+
+	i8080_gensub(cpu, val);
+	cpu->registers.pc++;
+	return CYCLES_SBB;
+}
+
+uint8_t i8080_sbi(intel8080_t *cpu)
+{
+	uint8_t val;
+	val = i8080_get_8(cpu, cpu->registers.pc+1);
+	if(cpu->registers.flags & FLAGS_CARRY)
+		val++;
+	i8080_gensub(cpu, val);
+	cpu->registers.pc+=2;
+	return CYCLES_SBI;
+}
+
+uint8_t i8080_inr(intel8080_t *cpu)
 {
 	uint8_t dest = DESTINATION(cpu->current_op_code);
-	uint8_t val;
+	uint8_t val = i8080_regread(cpu, dest);
+
+	if(i8080_check_half_carry(val, 1))
+		i8080_set_flag(cpu, FLAGS_H);
+	else
+		i8080_clear_flag(cpu, FLAGS_H);
 	
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-		val = i8080_regread(cpu, dest);
+	i8080_regwrite(cpu, dest, val + 1);
 
-		if(i8080_check_half_carry(val, 1))
-			i8080_set_flag(cpu, FLAGS_H);
-		else
-			i8080_clear_flag(cpu, FLAGS_H);
-
-		i8080_regwrite(cpu, dest, val + 1);
-
-		i8080_update_flags(cpu, dest, FLAGS_ZERO | FLAGS_PARITY | FLAGS_SIGN | FLAGS_H);
-	}
-
-	if(++cpu->decoder_step == CYCLES_INR)
-		cpu->decoder_step = 0;
+	i8080_update_flags(cpu, dest, FLAGS_ZERO | FLAGS_PARITY | FLAGS_SIGN | FLAGS_H);
+	cpu->registers.pc++;
+	return CYCLES_INR;
 }
 
-void i8080_dcr(intel8080_t *cpu)
+uint8_t i8080_dcr(intel8080_t *cpu)
 {
-	uint8_t dest = DESTINATION(cpu->current_op_code), val;
-	
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-		val = i8080_regread(cpu, dest);
+	uint8_t dest = DESTINATION(cpu->current_op_code);
+	uint8_t val = i8080_regread(cpu, dest);
 
-		if(i8080_check_half_carry(val, 0xff))
-			i8080_set_flag(cpu, FLAGS_H);
-		else
-			i8080_clear_flag(cpu, FLAGS_H);
+	if(i8080_check_half_carry(val, 0xff))
+		i8080_set_flag(cpu, FLAGS_H);
+	else
+		i8080_clear_flag(cpu, FLAGS_H);
 
-		i8080_regwrite(cpu, dest, val + 0xff);
-		i8080_update_flags(cpu, dest, FLAGS_ZERO | FLAGS_PARITY | FLAGS_SIGN | FLAGS_H);
-	}
-
-	if(++cpu->decoder_step == CYCLES_DCR)
-		cpu->decoder_step = 0;
+	i8080_regwrite(cpu, dest, val + 0xff);
+	i8080_update_flags(cpu, dest, FLAGS_ZERO | FLAGS_PARITY | FLAGS_SIGN | FLAGS_H);
+	cpu->registers.pc++;
+	return CYCLES_DCR;
 }
 
-void i8080_inx(intel8080_t *cpu)
+uint8_t i8080_inx(intel8080_t *cpu)
 {
 	uint8_t rp = RP(cpu->current_op_code);
-	
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-		i8080_pairwrite(cpu, rp, i8080_pairread(cpu, rp) + 1);
-	}
-
-	if(++cpu->decoder_step == CYCLES_INX)
-		cpu->decoder_step = 0;
+	i8080_pairwrite(cpu, rp, i8080_pairread(cpu, rp) + 1);
+	cpu->registers.pc++;
+	return CYCLES_INX;
 }
 
-void i8080_dcx(intel8080_t *cpu)
+uint8_t i8080_dcx(intel8080_t *cpu)
 {
 	uint8_t rp = RP(cpu->current_op_code);
-	
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-		i8080_pairwrite(cpu, rp, i8080_pairread(cpu, rp) - 1);
-	}
-
-	if(++cpu->decoder_step == CYCLES_DCX)
-		cpu->decoder_step = 0;
+	cpu->registers.pc++;
+	i8080_pairwrite(cpu, rp, i8080_pairread(cpu, rp) - 1);
+	return CYCLES_DCX;
 }
 
-void i8080_dad(intel8080_t *cpu)
+uint8_t i8080_dad(intel8080_t *cpu)
 {
 	uint8_t rp = RP(cpu->current_op_code);
+	uint32_t val = i8080_pairread(cpu, rp);	
+	val += i8080_pairread(cpu, PAIR_HL);
+
+	if(val > 0xffff)
+		i8080_set_flag(cpu, FLAGS_CARRY);
+	else
+		i8080_clear_flag(cpu, FLAGS_CARRY);
 	
-	uint32_t val = i8080_pairread(cpu, rp);
+	i8080_pairwrite(cpu, PAIR_HL, val & 0xffff);
 
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-		val += i8080_pairread(cpu, PAIR_HL);
+	cpu->registers.pc++;
 
-		if(val > 0xffff)
-			i8080_set_flag(cpu, FLAGS_CARRY);
-		else
-			i8080_clear_flag(cpu, FLAGS_CARRY);
-	
-		i8080_pairwrite(cpu, PAIR_HL, val & 0xffff);
-	}
-
-	if(++cpu->decoder_step == CYCLES_DAD)
-		cpu->decoder_step = 0;
+	return CYCLES_DAD;
 }
 
-void i8080_ana(intel8080_t *cpu)
+uint8_t i8080_ana(intel8080_t *cpu)
 {
 	uint8_t source = SOURCE(cpu->current_op_code);
 
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-		cpu->registers.a &= i8080_regread(cpu, source);
-		i8080_clear_flag(cpu, FLAGS_CARRY);
-		i8080_update_flags(cpu, REGISTER_A, FLAGS_ZERO | FLAGS_SIGN | FLAGS_PARITY | FLAGS_CARRY | FLAGS_H);
-	}
+	cpu->registers.a &= i8080_regread(cpu, source);
+	i8080_clear_flag(cpu, FLAGS_CARRY);
+	i8080_update_flags(cpu, REGISTER_A, FLAGS_ZERO | FLAGS_SIGN | FLAGS_PARITY | FLAGS_CARRY | FLAGS_H);
 
-	if(++cpu->decoder_step == CYCLES_ANA)
-		cpu->decoder_step = 0;
+	cpu->registers.pc++;
+	return CYCLES_ANA;
 }
 
-void i8080_ani(intel8080_t *cpu)
-{
-	switch(cpu->decoder_step)
-	{
-	case 0:
-		cpu->registers.pc++;
-		break;
-	case 1:
-		cpu->registers.pc++;
-		cpu->registers.a &= cpu->data_bus;
-		i8080_clear_flag(cpu, FLAGS_CARRY);
-		i8080_clear_flag(cpu, FLAGS_H);
-		i8080_update_flags(cpu, REGISTER_A, FLAGS_ZERO | FLAGS_SIGN | FLAGS_PARITY | FLAGS_CARRY | FLAGS_H);
-		break;
-	}
+uint8_t i8080_ani(intel8080_t *cpu)
+{	
+	cpu->registers.a &= i8080_get_8(cpu, cpu->registers.pc+1);
+	i8080_clear_flag(cpu, FLAGS_CARRY);
+	i8080_clear_flag(cpu, FLAGS_H);
+	i8080_update_flags(cpu, REGISTER_A, FLAGS_ZERO | FLAGS_SIGN | FLAGS_PARITY | FLAGS_CARRY | FLAGS_H);
 
-	if(++cpu->decoder_step == CYCLES_ANI)
-		cpu->decoder_step = 0;
+	cpu->registers.pc+=2;
+	return CYCLES_ANI;
 }
 
-void i8080_ora(intel8080_t *cpu)
+uint8_t i8080_ora(intel8080_t *cpu)
 {
 	uint8_t source = SOURCE(cpu->current_op_code);
 
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-		cpu->registers.a |= i8080_regread(cpu, source);
-		i8080_clear_flag(cpu, FLAGS_CARRY);
-		i8080_clear_flag(cpu, FLAGS_H);
-		i8080_update_flags(cpu, REGISTER_A, FLAGS_ZERO | FLAGS_SIGN | FLAGS_PARITY | FLAGS_CARRY | FLAGS_H);
-	}
+	cpu->registers.a |= i8080_regread(cpu, source);
+	i8080_clear_flag(cpu, FLAGS_CARRY);
+	i8080_clear_flag(cpu, FLAGS_H);
+	i8080_update_flags(cpu, REGISTER_A, FLAGS_ZERO | FLAGS_SIGN | FLAGS_PARITY | FLAGS_CARRY | FLAGS_H);
 
-	if(++cpu->decoder_step == CYCLES_ORA)
-		cpu->decoder_step = 0;
+	cpu->registers.pc++;
+	return CYCLES_ORA;
 }
 
-void i8080_ori(intel8080_t *cpu)
+uint8_t i8080_ori(intel8080_t *cpu)
 {
-	switch(cpu->decoder_step)
-	{
-	case 0:
-		cpu->registers.pc++;
-		break;
-	case 1:
-		cpu->registers.pc++;
-		cpu->registers.a |= cpu->data_bus;
-		i8080_clear_flag(cpu, FLAGS_CARRY);
-		i8080_clear_flag(cpu, FLAGS_H);
-		i8080_update_flags(cpu, REGISTER_A, FLAGS_ZERO | FLAGS_SIGN | FLAGS_PARITY | FLAGS_CARRY | FLAGS_H);
-		break;
-	}
+	cpu->registers.a |= i8080_get_8(cpu, cpu->registers.pc+1);
+	i8080_clear_flag(cpu, FLAGS_CARRY);
+	i8080_clear_flag(cpu, FLAGS_H);
+	i8080_update_flags(cpu, REGISTER_A, FLAGS_ZERO | FLAGS_SIGN | FLAGS_PARITY | FLAGS_CARRY | FLAGS_H);
 
-	if(++cpu->decoder_step == CYCLES_ORI)
-		cpu->decoder_step = 0;
+	cpu->registers.pc+=2;
+	return CYCLES_ORI;
 }
 
-void i8080_xra(intel8080_t *cpu)
+uint8_t i8080_xra(intel8080_t *cpu)
 {
 	uint8_t source = SOURCE(cpu->current_op_code);
 
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-		cpu->registers.a ^= i8080_regread(cpu, source);
-		i8080_clear_flag(cpu, FLAGS_CARRY);
-		i8080_clear_flag(cpu, FLAGS_H);
-		i8080_update_flags(cpu, REGISTER_A, FLAGS_ZERO | FLAGS_SIGN | FLAGS_PARITY | FLAGS_CARRY | FLAGS_H);
-	}
+	cpu->registers.a ^= i8080_regread(cpu, source);
+	i8080_clear_flag(cpu, FLAGS_CARRY);
+	i8080_clear_flag(cpu, FLAGS_H);
+	i8080_update_flags(cpu, REGISTER_A, FLAGS_ZERO | FLAGS_SIGN | FLAGS_PARITY | FLAGS_CARRY | FLAGS_H);
 
-	if(++cpu->decoder_step == CYCLES_XRA)
-		cpu->decoder_step = 0;
+	cpu->registers.pc++;
+	return CYCLES_XRA;
 }
 
-void i8080_xri(intel8080_t *cpu)
+uint8_t i8080_xri(intel8080_t *cpu)
 {
-	switch(cpu->decoder_step)
-	{
-	case 0:
-		cpu->registers.pc++;
-		break;
-	case 1:
-		cpu->registers.pc++;
-		cpu->registers.a ^= cpu->data_bus;
-		i8080_clear_flag(cpu, FLAGS_CARRY);
-		i8080_clear_flag(cpu, FLAGS_H);
-		i8080_update_flags(cpu, REGISTER_A, FLAGS_ZERO | FLAGS_SIGN | FLAGS_PARITY | FLAGS_CARRY | FLAGS_H);
-		break;
-	}
+	cpu->registers.a ^= i8080_get_8(cpu, cpu->registers.pc+1);
+	i8080_clear_flag(cpu, FLAGS_CARRY);
+	i8080_clear_flag(cpu, FLAGS_H);
+	i8080_update_flags(cpu, REGISTER_A, FLAGS_ZERO | FLAGS_SIGN | FLAGS_PARITY | FLAGS_CARRY | FLAGS_H);
 
-	if(++cpu->decoder_step == CYCLES_XRI)
-		cpu->decoder_step = 0;
+	cpu->registers.pc+=2;
+	return CYCLES_XRI;
 }
 
-void i8080_ei(intel8080_t *cpu)
+uint8_t i8080_ei(intel8080_t *cpu)
 {
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-		i8080_set_flag(cpu, FLAGS_IF);
-	}
-	if(++cpu->decoder_step == CYCLES_EI)
-		cpu->decoder_step = 0;
+	cpu->registers.pc++;
+	i8080_set_flag(cpu, FLAGS_IF);
+	return CYCLES_EI;
 }
 
-void i8080_di(intel8080_t *cpu)
+uint8_t i8080_di(intel8080_t *cpu)
 {
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-		i8080_clear_flag(cpu, FLAGS_IF);
-	}
-	if(++cpu->decoder_step == CYCLES_DI)
-		cpu->decoder_step = 0;
+	cpu->registers.pc++;
+	i8080_clear_flag(cpu, FLAGS_IF);
+	return CYCLES_DI;
 }
 
-void i8080_xthl(intel8080_t *cpu)
+uint8_t i8080_xthl(intel8080_t *cpu)
 {
-	uint16_t temp;
+	uint16_t temp = i8080_get_16(cpu, cpu->registers.sp);
 
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-
-		temp = *(uint16_t*)&cpu->memory[cpu->registers.sp];
-
-		*(uint16_t*)&cpu->memory[cpu->registers.sp] = cpu->registers.hl;
-		cpu->registers.hl = temp;
-	}
-	
-	if(++cpu->decoder_step == CYCLES_XTHL)
-		cpu->decoder_step = 0;
+	i8080_set_16(cpu, cpu->registers.sp, cpu->registers.hl);
+	cpu->registers.hl = temp;
+	cpu->registers.pc++;
+	return CYCLES_XTHL; 
 }
 
-void i8080_sphl(intel8080_t *cpu)
+uint8_t i8080_sphl(intel8080_t *cpu)
 {
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-
-		cpu->registers.sp = cpu->registers.hl;
-	}
-	
-	if(++cpu->decoder_step == CYCLES_SPHL)
-		cpu->decoder_step = 0;
+	cpu->registers.sp = cpu->registers.hl;
+	cpu->registers.pc++;	
+	return CYCLES_SPHL;
 }
 
-void i8080_in(intel8080_t *cpu)
+uint8_t i8080_in(intel8080_t *cpu)
 {
 	static uint8_t character = 0;
-	static int counter = 0;
-	switch(cpu->decoder_step)
+	switch(i8080_get_8(cpu, cpu->registers.pc+1))
 	{
-	case 0:
-		cpu->registers.pc++;
+	case 0x00:
+		cpu->registers.a = 0x00;
 		break;
-	case 1:
-		cpu->registers.pc++;
-		switch(cpu->data_bus)
-		{
-		case 0x00:
-			cpu->registers.a = 0x00;
-			break;
-		case 0x1:
-			cpu->registers.a = cpu->term_in();
-			break;
-		case 0x8:
-			cpu->registers.a = cpu->disk_controller.disk_status();
-			break;
-		case 0x9:
-			cpu->registers.a = cpu->disk_controller.sector();
-			break;
-		case 0xa:
-			cpu->registers.a = cpu->disk_controller.read();
-			break;
-		case 0x10: // 2SIO port 1, status
-			cpu->registers.a = 0x2; // bit 1 == transmit buffer empty
-			character = cpu->term_in();
-			if(character)
-				cpu->registers.a |= 0x1;		
-			break;
-		case 0x11: // 2SIO port 1, read
-			cpu->registers.a = character;
-			break;
-		case 0xff: // Front panel switches
-			cpu->registers.a = 0x00;
-			break;
-		default:
-			cpu->registers.a = 0xff;
-			printf("IN PORT %x\n", cpu->data_bus);
-			break;
-		}
+	case 0x1:
+		cpu->registers.a = cpu->term_in();
+		break;
+	case 0x8:
+		cpu->registers.a = cpu->disk_controller.disk_status();
+		break;
+	case 0x9:
+		cpu->registers.a = cpu->disk_controller.sector();
+		break;
+	case 0xa:
+		cpu->registers.a = cpu->disk_controller.read();
+		break;
+	case 0x10: // 2SIO port 1, status
+		cpu->registers.a = 0x2; // bit 1 == transmit buffer empty
+		character = cpu->term_in();
+		if(character)
+			cpu->registers.a |= 0x1;		
+		break;
+	case 0x11: // 2SIO port 1, read
+		cpu->registers.a = character;
+		break;
+	case 0xff: // Front panel switches
+		cpu->registers.a = 0x00;
+		break;
+	default:
+		cpu->registers.a = 0xff;
+		printf("IN PORT %x\n", cpu->data_bus);
 		break;
 	}
 
-	if(++cpu->decoder_step == CYCLES_IN)
-		cpu->decoder_step = 0;
+	cpu->registers.pc+=2;
+	return CYCLES_IN;
 }
 
-void i8080_out(intel8080_t *cpu)
+uint8_t i8080_out(intel8080_t *cpu)
 {
-	switch(cpu->decoder_step)
+	switch(i8080_get_8(cpu, cpu->registers.pc+1))
 	{
-	case 0:
-		cpu->registers.pc++;
+	case 0x1:
+		cpu->term_out(cpu->registers.a);
 		break;
-	case 1:
-		cpu->registers.pc++;
-		switch(cpu->data_bus)
-		{
-		case 0x1:
-			cpu->term_out(cpu->registers.a);
-			break;
-		case 0x8:
-			cpu->disk_controller.disk_select(cpu->registers.a);
-			break;
-		case 0x9:
-			cpu->disk_controller.disk_function(cpu->registers.a);
-			break;
-		case 0xa:
-			cpu->disk_controller.write(cpu->registers.a);
-			break;
-		case 0x10:  // 2SIO port 1 control
-			break;
-		case 0x11: // 2sio port 1 write
-			cpu->term_out(cpu->registers.a);
-			break;
-		default:
-			printf("OUT PORT %x, DATA: %x\n", cpu->data_bus, cpu->registers.a);
-			break;
-		}
+	case 0x8:
+		cpu->disk_controller.disk_select(cpu->registers.a);
+		break;
+	case 0x9:
+		cpu->disk_controller.disk_function(cpu->registers.a);
+		break;
+	case 0xa:
+		cpu->disk_controller.write(cpu->registers.a);
+		break;
+	case 0x10:  // 2SIO port 1 control
+		break;
+	case 0x11: // 2sio port 1 write
+		cpu->term_out(cpu->registers.a);
+		break;
+	default:
+		printf("OUT PORT %x, DATA: %x\n", cpu->data_bus, cpu->registers.a);
 		break;
 	}
-
-	if(++cpu->decoder_step == CYCLES_OUT)
-		cpu->decoder_step = 0;
+	cpu->registers.pc+=2;
+	return CYCLES_OUT;
 }
 
-void i8080_push(intel8080_t *cpu)
+uint8_t i8080_push(intel8080_t *cpu)
 {
-	uint8_t pair;
+	uint8_t pair = RP(cpu->current_op_code);
 	uint16_t val;
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
 
-		pair = RP(cpu->current_op_code);
+	if(pair == PAIR_SP)
+		val = cpu->registers.af;
+	else
+		val = i8080_pairread(cpu, pair);
 
-		if(pair == PAIR_SP)
-			val = cpu->registers.af;
-		else
-			val = i8080_pairread(cpu, pair);
-
-		cpu->registers.sp-=2;
-		*(uint16_t*)&cpu->memory[cpu->registers.sp] = val;
-	}
+	cpu->registers.sp-=2;
+	i8080_set_16(cpu, cpu->registers.sp, val);
 	
-	if(++cpu->decoder_step == CYCLES_PUSH)
-		cpu->decoder_step = 0;
+	cpu->registers.pc++;
+	return CYCLES_PUSH;
 }
 
-void i8080_pop(intel8080_t *cpu)
+uint8_t i8080_pop(intel8080_t *cpu)
 {
-	uint8_t pair;
-	uint16_t val;
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-		pair = RP(cpu->current_op_code);
-		val = *(uint16_t*)&cpu->memory[cpu->registers.sp];
-		cpu->registers.sp+=2;
+	uint8_t pair = RP(cpu->current_op_code);
+	uint16_t val = i8080_get_16(cpu, cpu->registers.sp);
+	cpu->registers.sp+=2;
+	if(pair == PAIR_SP)
+		cpu->registers.af = val;
+	else
+		i8080_pairwrite(cpu, pair, val);
 
-		if(pair == PAIR_SP)
-			cpu->registers.af = val;
-		else
-			i8080_pairwrite(cpu, pair, val);
-	}
-	
-	if(++cpu->decoder_step == CYCLES_POP)
-		cpu->decoder_step = 0;
+	cpu->registers.pc++;
+	return CYCLES_POP;
 }
 
-void i8080_stc(intel8080_t *cpu)
+uint8_t i8080_stc(intel8080_t *cpu)
 {
-	if(cpu->decoder_step == 0)
+	i8080_set_flag(cpu, FLAGS_CARRY);
+	cpu->registers.pc++;
+	return CYCLES_STC;
+}
+
+uint8_t i8080_cmc(intel8080_t *cpu)
+{
+	cpu->registers.flags ^= FLAGS_CARRY;
+	cpu->registers.pc++;
+	return CYCLES_CMC;
+}
+
+uint8_t i8080_rlc(intel8080_t *cpu)
+{
+	uint8_t high_bit = cpu->registers.a & 0x80;
+
+	cpu->registers.a <<= 1;
+	if(high_bit)
 	{
-		cpu->registers.pc++;
 		i8080_set_flag(cpu, FLAGS_CARRY);
+		cpu->registers.a |= 1;
+	}
+	else
+	{
+		i8080_clear_flag(cpu, FLAGS_CARRY);
+		cpu->registers.a &= ~1;
 	}
 	
-	if(++cpu->decoder_step == CYCLES_STC)
-		cpu->decoder_step = 0;
+	cpu->registers.pc++;	
+	return CYCLES_RAL;
 }
 
-void i8080_cmc(intel8080_t *cpu)
+uint8_t i8080_rrc(intel8080_t *cpu)
 {
-	if(cpu->decoder_step == 0)
+	uint8_t low_bit = cpu->registers.a & 1;
+
+	cpu->registers.a >>= 1;
+
+	if(low_bit)
 	{
-		cpu->registers.pc++;
-		cpu->registers.flags ^= FLAGS_CARRY;
+		i8080_set_flag(cpu, FLAGS_CARRY);
+		cpu->registers.a |= 0x80;
+	}
+	else
+	{
+		cpu->registers.a &= ~0x80;
+		i8080_clear_flag(cpu, FLAGS_CARRY);
 	}
 	
-	if(++cpu->decoder_step == CYCLES_CMC)
-		cpu->decoder_step = 0;
+	cpu->registers.pc++;	
+	return CYCLES_RAR;
 }
 
-void i8080_rlc(intel8080_t *cpu)
+uint8_t i8080_ral(intel8080_t *cpu)
 {
-	uint8_t high_bit;
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-		high_bit = cpu->registers.a & 0x80;
+	uint8_t high_bit = cpu->registers.a & 0x80;
+	cpu->registers.a <<= 1;
 
-		cpu->registers.a <<= 1;
+	if(cpu->registers.flags & FLAGS_CARRY)
+		cpu->registers.a |= 1;
+	else
+		cpu->registers.a &= ~1;
 
-		if(high_bit)
-		{
-			i8080_set_flag(cpu, FLAGS_CARRY);
-			cpu->registers.a |= 1;
-		}
-		else
-		{
-			i8080_clear_flag(cpu, FLAGS_CARRY);
-			cpu->registers.a &= ~1;
-		}
+	if(high_bit)
+		i8080_set_flag(cpu, FLAGS_CARRY);
+	else
+		i8080_clear_flag(cpu, FLAGS_CARRY);
 		
-	}
-	
-	if(++cpu->decoder_step == CYCLES_RAL)
-		cpu->decoder_step = 0;
+	cpu->registers.pc++;
+	return CYCLES_RLC;
 }
 
-void i8080_rrc(intel8080_t *cpu)
+uint8_t i8080_rar(intel8080_t *cpu)
 {
-	uint8_t low_bit;
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-		low_bit = cpu->registers.a & 1;
+	uint8_t low_bit = cpu->registers.a & 1;
 
-		cpu->registers.a >>= 1;
+	cpu->registers.a >>= 1;
 
-		if(low_bit)
-		{
-			i8080_set_flag(cpu, FLAGS_CARRY);
-			cpu->registers.a |= 0x80;
-		}
-		else
-		{
-			cpu->registers.a &= ~0x80;
-			i8080_clear_flag(cpu, FLAGS_CARRY);
-		}
-		
-	}
+	if(cpu->registers.flags & FLAGS_CARRY)
+		cpu->registers.a |= 0x80;
+	else
+		cpu->registers.a &= ~0x80;
+
+	if(low_bit)
+		i8080_set_flag(cpu, FLAGS_CARRY);
+	else
+		i8080_clear_flag(cpu, FLAGS_CARRY);
 	
-	if(++cpu->decoder_step == CYCLES_RAR)
-		cpu->decoder_step = 0;
+	cpu->registers.pc++;
+	return CYCLES_RRC;
 }
 
-void i8080_ral(intel8080_t *cpu)
+uint8_t i8080_jmp(intel8080_t *cpu)
 {
-	uint8_t high_bit;
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-		high_bit = cpu->registers.a & 0x80;
-
-		cpu->registers.a <<= 1;
-
-		if(cpu->registers.flags & FLAGS_CARRY)
-			cpu->registers.a |= 1;
-		else
-			cpu->registers.a &= ~1;
-
-		if(high_bit)
-			i8080_set_flag(cpu, FLAGS_CARRY);
-		else
-			i8080_clear_flag(cpu, FLAGS_CARRY);
-		
-	}
-	
-	if(++cpu->decoder_step == CYCLES_RLC)
-		cpu->decoder_step = 0;
+	cpu->registers.pc = i8080_get_16(cpu, cpu->registers.pc+1);
+	return CYCLES_JMP;
 }
 
-void i8080_rar(intel8080_t *cpu)
+uint8_t i8080_jccc(intel8080_t *cpu)
 {
-	uint8_t low_bit;
-	if(cpu->decoder_step == 0)
+	uint8_t condition = CONDITION(cpu->current_op_code);
+
+	if(i8080_check_condition(cpu, condition))
 	{
-		cpu->registers.pc++;
-		low_bit = cpu->registers.a & 1;
-
-		cpu->registers.a >>= 1;
-
-		if(cpu->registers.flags & FLAGS_CARRY)
-			cpu->registers.a |= 0x80;
-		else
-			cpu->registers.a &= ~0x80;
-
-		if(low_bit)
-			i8080_set_flag(cpu, FLAGS_CARRY);
-		else
-			i8080_clear_flag(cpu, FLAGS_CARRY);
-		
+		i8080_jmp(cpu);
+	}
+	else
+	{
+		cpu->registers.pc+=3;
 	}
 	
-	if(++cpu->decoder_step == CYCLES_RRC)
-		cpu->decoder_step = 0;
+	return CYCLES_JMP;
 }
 
-void i8080_jccc(intel8080_t *cpu)
+uint8_t i8080_ret(intel8080_t *cpu)
 {
-	uint8_t condition;
-	if(cpu->decoder_step == 0)
-	{
-		condition = CONDITION(cpu->current_op_code);
-
-		if(i8080_check_condition(cpu, condition))
-		{
-			cpu->current_op_code = OP_JMP;
-			cpu->registers.pc++;
-		}
-		else
-		{
-			cpu->registers.pc+=3;
-		}
-	}
-	
-	if(++cpu->decoder_step == CYCLES_JMP)
-		cpu->decoder_step = 0;
-}
-
-void i8080_ret(intel8080_t *cpu)
-{
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc = *(uint16_t*)&cpu->memory[cpu->registers.sp];
-		cpu->registers.sp+=2;
-	}
-	
-	if(++cpu->decoder_step == CYCLES_RET)
-		cpu->decoder_step = 0;
+	cpu->registers.pc = i8080_get_16(cpu, cpu->registers.sp);
+	cpu->registers.sp+=2;
+	return CYCLES_RET;
 } 
 
-void i8080_rccc(intel8080_t *cpu)
+uint8_t i8080_rccc(intel8080_t *cpu)
 {
-	uint8_t condition;
-	if(cpu->decoder_step == 0)
-	{
-		condition = CONDITION(cpu->current_op_code);
+	uint8_t condition = CONDITION(cpu->current_op_code);
 
-		if(i8080_check_condition(cpu, condition))
-		{
-			i8080_ret(cpu);
-		}
-		else
-		{
-			cpu->registers.pc++;
-		}
+	if(i8080_check_condition(cpu, condition))
+	{
+		i8080_ret(cpu);
 	}
-	
-	if(++cpu->decoder_step == CYCLES_RET)
-		cpu->decoder_step = 0;
+	else
+	{
+		cpu->registers.pc++;
+	}
+	return CYCLES_RET;
 } 
 
-void i8080_jmp(intel8080_t *cpu)
+uint8_t i8080_rst(intel8080_t *cpu)
 {
-	switch(cpu->decoder_step)
-	{
-	case 0:
-		cpu->registers.pc++;
-		break;
-	case 1:
-		cpu->registers.pc++;
-		cpu->decoder_state = cpu->data_bus;
-		break;
-	case 2:
-		cpu->registers.pc = cpu->decoder_state | cpu->data_bus << 8;
-		break;
-	}
+	uint8_t vec = DESTINATION(cpu->current_op_code);
 
-	if(++cpu->decoder_step == CYCLES_JMP)
-		cpu->decoder_step = 0;
-}
+	cpu->registers.sp-=2;
+	i8080_set_16(cpu, cpu->registers.sp, cpu->registers.pc + 1);
 
-void i8080_rst(intel8080_t *cpu)
-{
-	uint8_t vec;
-	if(cpu->decoder_step == 0)
-	{
-		vec = DESTINATION(cpu->current_op_code);
-
-		cpu->registers.sp-=2;
-		*(uint16_t*)&cpu->memory[cpu->registers.sp] = cpu->registers.pc + 1;
-
-		cpu->registers.pc = vec*8;
-	}
+	cpu->registers.pc = vec*8;
 	
-	if(++cpu->decoder_step == CYCLES_RET)
-		cpu->decoder_step = 0;
+	return CYCLES_RET;
 } 
 
-void i8080_call(intel8080_t *cpu)
+uint8_t i8080_call(intel8080_t *cpu)
 {
-	switch(cpu->decoder_step)
-	{
-	case 0:
-		cpu->registers.pc++;
-		break;
-	case 1:
-		cpu->registers.pc++;
-		cpu->decoder_state = cpu->data_bus;
-		break;
-	case 2:
-		cpu->registers.sp-=2;
-		*(uint16_t*)&cpu->memory[cpu->registers.sp] = cpu->registers.pc + 1;
-		cpu->registers.pc = cpu->decoder_state | cpu->data_bus << 8;
-		break;
-	}
+	cpu->registers.sp-=2;
+	i8080_set_16(cpu, cpu->registers.sp, cpu->registers.pc + 3);
 
-	if(++cpu->decoder_step == CYCLES_JMP)
-		cpu->decoder_step = 0;
+	cpu->registers.pc = i8080_get_16(cpu, cpu->registers.pc + 1);
+	return CYCLES_JMP;
 }
 
-void i8080_cccc(intel8080_t *cpu)
+uint8_t i8080_cccc(intel8080_t *cpu)
 {
-	uint8_t condition;
-	if(cpu->decoder_step == 0)
-	{
-		condition = CONDITION(cpu->current_op_code);
+	uint8_t condition = CONDITION(cpu->current_op_code);
 
-		if(i8080_check_condition(cpu, condition))
-		{
-			cpu->current_op_code = OP_CALL;
-			cpu->registers.pc++;
-		}
-		else
-		{
-			cpu->registers.pc+=3;
-		}
+	if(i8080_check_condition(cpu, condition))
+	{
+		i8080_call(cpu);
+	}
+	else
+	{
+		cpu->registers.pc+=3;
 	}
 	
-	if(++cpu->decoder_step == CYCLES_CALL)
-		cpu->decoder_step = 0;
+	return CYCLES_CALL;
 }
 
-void i8080_pchl(intel8080_t *cpu)
+uint8_t i8080_pchl(intel8080_t *cpu)
 {
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc = cpu->registers.hl;
-	}
+	cpu->registers.pc = cpu->registers.hl;
+	return CYCLES_PCHL;
+}
+
+uint8_t i8080_nop(intel8080_t *cpu)
+{
+	cpu->registers.pc++;
+
+	return CYCLES_NOP;
+}
+
+uint8_t i8080_cma(intel8080_t *cpu)
+{
+	cpu->registers.a = ~cpu->registers.a;
+	cpu->registers.pc++;
+
+	return CYCLES_CMA;
+}
+
+uint8_t i8080_cmp(intel8080_t *cpu)
+{
+	uint8_t reg = SOURCE(cpu->current_op_code);
+
+	i8080_compare(cpu, i8080_regread(cpu, reg));
 	
-	if(++cpu->decoder_step == CYCLES_PCHL)
-		cpu->decoder_step = 0;
+	cpu->registers.pc++;
+	return CYCLES_CMP;
 }
 
-
-void i8080_nop(intel8080_t *cpu)
+uint8_t i8080_cpi(intel8080_t *cpu)
 {
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-	}
-
-	if(++cpu->decoder_step == CYCLES_NOP)
-		cpu->decoder_step = 0;
-}
-
-void i8080_cma(intel8080_t *cpu)
-{
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-		cpu->registers.a = ~cpu->registers.a;
-	}
-
-	if(++cpu->decoder_step == CYCLES_CMA)
-		cpu->decoder_step = 0;
-}
-
-void i8080_cmp(intel8080_t *cpu)
-{
-	uint8_t reg;
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-		reg = SOURCE(cpu->current_op_code);
-		i8080_compare(cpu, i8080_regread(cpu, reg));
-	}
-
-	if(++cpu->decoder_step == CYCLES_CMP)
-		cpu->decoder_step = 0;
-}
-
-void i8080_cpi(intel8080_t *cpu)
-{
-	switch(cpu->decoder_step)
-	{
-	case 0:
-		cpu->registers.pc++;
-		break;
-	case 1:
-		cpu->registers.pc++;
-		i8080_compare(cpu, cpu->data_bus);
-		break;
-	}
-
-	if(++cpu->decoder_step == CYCLES_CPI)
-		cpu->decoder_step = 0;
+	i8080_compare(cpu, i8080_get_8(cpu, cpu->registers.pc+1));
+	cpu->registers.pc+=2;
+	return CYCLES_CPI;
 }
 
 void i8080_fetch_next_op(intel8080_t *cpu)
@@ -1415,25 +1014,20 @@ void i8080_fetch_next_op(intel8080_t *cpu)
 void i8080_daa(intel8080_t *cpu)
 {
 	uint8_t val, add = 0;
+	val = i8080_regread(cpu, REGISTER_A);
 
-	if(cpu->decoder_step == 0)
-	{
-		cpu->registers.pc++;
-		val = i8080_regread(cpu, REGISTER_A);
+	if((val & 0xf) > 9 || cpu->registers.flags & FLAGS_H)
+		add += 0x06;
 
-		if((val & 0xf) > 9 || cpu->registers.flags & FLAGS_H)
-			add += 0x06;
+	val += add;
 
-		val += add;
+	if(((val & 0xf0) >> 4) > 9 || cpu->registers.flags & FLAGS_CARRY)
+		add += 0x60;
 
-		if(((val & 0xf0) >> 4) > 9 || cpu->registers.flags & FLAGS_CARRY)
-			add += 0x60;
-
-		i8080_genadd(cpu, add);
-	}
-
-	if(++cpu->decoder_step == CYCLES_DAA)
-		cpu->decoder_step = 0;
+	i8080_genadd(cpu, add);
+	
+	cpu->registers.pc++;
+	return CYCLES_DAA;
 }
 
 void i8080_cycle(intel8080_t *cpu)
