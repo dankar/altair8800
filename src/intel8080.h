@@ -4,13 +4,13 @@
 #include <stdint.h>
 
 #define FLAGS_CARRY		0x1
-#define FLAGS_PARITY	0x4
+#define FLAGS_PARITY		0x4
 #define FLAGS_H			16
 #define FLAGS_IF		32
 #define FLAGS_ZERO		64
 #define FLAGS_SIGN		128
 
-typedef struct 
+typedef struct
 {
 	union
 	{
@@ -29,10 +29,9 @@ typedef struct
 		{
 			uint8_t c;
 			uint8_t b;
-			
 		};
 	};
-	
+
 	union
 	{
 		uint16_t de;
@@ -40,7 +39,7 @@ typedef struct
 		{
 			uint8_t e;
 			uint8_t d;
-			
+
 		};
 	};
 
@@ -61,6 +60,12 @@ typedef struct
 typedef void (*port_out)(uint8_t b);
 typedef uint8_t (*port_in)();
 
+typedef uint8_t (*mem_read_8)(uint16_t address);
+typedef void (*mem_write_8)(uint16_t address, uint8_t val);
+
+typedef uint16_t (*mem_read_16)(uint16_t address);
+typedef void (*mem_write_16)(uint16_t address, uint16_t val);
+
 typedef struct
 {
 	port_out disk_select;
@@ -71,29 +76,30 @@ typedef struct
 	port_in read;
 } disk_controller_t;
 
-typedef struct 
+typedef struct
 {
-	uint8_t memory[64*1024];
-
 	uint8_t data_bus;
 	uint16_t address_bus;
 
-	registers_t registers;
-
 	uint8_t current_op_code;
-	uint8_t decoder_step;
-	uint16_t decoder_state;
+
+	registers_t registers;
 
 	port_in term_in;
 	port_out term_out;
 
+	mem_read_8 read8;
+	mem_write_8 write8;
+	mem_read_16 read16;
+	mem_write_16 write16;
+
 	disk_controller_t disk_controller;
 } intel8080_t;
 
-
-
-
-void i8080_reset(intel8080_t *cpu, port_in in, port_out out, disk_controller_t *disk_controller);
+void i8080_reset(intel8080_t *cpu, port_in in, port_out out,
+			mem_read_8 _read8, mem_write_8 _write8,
+			mem_read_16 _read16, mem_write_16 _write16,
+			disk_controller_t *disk_controller);
 void i8080_deposit(intel8080_t *cpu, uint8_t data);
 void i8080_deposit_next(intel8080_t *cpu, uint8_t data);
 
@@ -101,6 +107,5 @@ void i8080_examine(intel8080_t *cpu, uint16_t address);
 void i8080_examine_next(intel8080_t *cpu);
 
 void i8080_cycle(intel8080_t *cpu);
-void i8080_sync(intel8080_t *cpu);
 
 #endif

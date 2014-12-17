@@ -7,15 +7,15 @@
 	#include <WinSock.h>
 #else
 	// socket
-	#include <sys/types.h> 
+	#include <sys/types.h>
 	#include <sys/socket.h>
     #include <netinet/in.h>
     #include <netinet/ip.h>
 	#include <sys/ioctl.h>
 	#include <fcntl.h>
-	
+
 	// strcat
-	#include <string.h>	
+	#include <string.h>
 #endif
 
 int sock;
@@ -82,6 +82,8 @@ port_in sector;
 port_out write;
 port_in read;*/
 
+uint8_t memory[64*1024];
+
 void load_file(intel8080_t *cpu)
 {
 	size_t size = 0;
@@ -90,7 +92,7 @@ void load_file(intel8080_t *cpu)
 	fseek(fp, 0, SEEK_END);
 	size = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
-	fread(&cpu->memory[0x100], 1, size, fp);
+	fread(&memory[0x100], 1, size, fp);
 	fclose(fp);
 }
 
@@ -100,7 +102,7 @@ const char *byte_to_binary(int x)
     static char b[9];
     b[0] = '\0';
 
-    
+ 
     for (z = 128; z > 0; z >>= 1)
     {
         strcat(b, ((x & z) == z) ? "1" : "0");
@@ -109,6 +111,26 @@ const char *byte_to_binary(int x)
     return b;
 }
 
+
+uint8_t read8(uint16_t address)
+{
+	return memory[address];
+}
+
+void write8(uint16_t address, uint8_t val)
+{
+	memory[address] = val;
+}
+
+uint16_t read16(uint16_t address)
+{
+	return *(uint16_t*)&memory[address];
+}
+
+void write16(uint16_t address, uint16_t val)
+{
+	*(uint16_t*)&memory[address] = val;
+}
 
 int main(int argc, char *argv[])
 {
@@ -181,14 +203,14 @@ int main(int argc, char *argv[])
 	disk_controller.write = write;
 	disk_controller.sector = sector;
 
-	i8080_reset(&cpu, term_in, term_out, &disk_controller);
+	i8080_reset(&cpu, term_in, term_out, read8, write8, read16, write16, &disk_controller);
 
 	// Load disk rom into memory
 	fp = fopen("software/88dskrom.bin", "rb");
 	fseek(fp, 0, SEEK_END);
 	size = ftell(fp);
 	fseek(fp, 0, SEEK_SET);
-	fread(&cpu.memory[0xff00], 1, size, fp);
+	fread(&memory[0xff00], 1, size, fp);
 	fclose(fp);
 
 	i8080_examine(&cpu, 0x00);
@@ -219,7 +241,6 @@ int main(int argc, char *argv[])
 		//if(cpu.registers.pc == breakpoint)
 		//	__asm int 3;
 		i8080_cycle(&cpu);
-		i8080_sync(&cpu);
 
 		//dump_regs(&cpu);
 		//Sleep(1);
