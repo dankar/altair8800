@@ -23,8 +23,6 @@ int client_sock;
 
 void dump_regs(intel8080_t *cpu)
 {
-	char data[1024];
-
 	printf("%04x\t%02x\t%04x\tC: %02x\tD: %02x\tE: %02x\n", cpu->address_bus, cpu->data_bus, cpu->registers.pc, cpu->registers.c, cpu->registers.d, cpu->registers.e);
 }
 
@@ -146,8 +144,6 @@ int main(int argc, char *argv[])
 	intel8080_t cpu;
 	int result;
 
-	memset(memory, 0, 64*1024);
-
 #ifdef WIN32
 	WSADATA wsaData;
 
@@ -161,7 +157,7 @@ int main(int argc, char *argv[])
 
 #endif
 
-
+	memset(memory, 0, 64*1024);
 	sock = socket(AF_INET, SOCK_STREAM, 0);
 
 #ifdef WIN32
@@ -236,7 +232,7 @@ int main(int argc, char *argv[])
 	disk_drive.disk2.fp = fopen("software/empty.dsk", "r+b");
 	disk_drive.nodisk.status = 0xff;
 
-	i8080_examine(&cpu, 0x0000); // ff00 loads from disk, 0000 loads basic
+	i8080_examine(&cpu, 0xff00); // ff00 loads from disk, 0000 loads basic
 	while(1)
 	{
 #ifdef WIN32

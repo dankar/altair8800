@@ -30,24 +30,24 @@ void i8080_reset(intel8080_t *cpu, port_in in, port_out out,
 	cpu->write16 = _write16;
 }
 
-int i8080_check_carry(uint8_t a, uint8_t b)
+int i8080_check_carry(uint16_t a, uint16_t b)
 {
-	b += a;
-	if(b < a)
+	if((a + b) > 0xff)
 		return 1;
 	else
 		return 0;
 }
 
-int i8080_check_half_carry(uint8_t a, uint8_t b)
+int i8080_check_half_carry(uint16_t a, uint16_t b)
 {
-	b += a;
-	if((b & 0xf) < (a & 0xf))
+	a &= 0xf;
+	b &= 0xf;
+
+	if((a + b) > 0xf)
 		return 1;
 	else
 		return 0;
 }
-
 void i8080_mwrite(intel8080_t *cpu)
 {
 	{
@@ -262,21 +262,25 @@ void i8080_update_flags(intel8080_t *cpu, uint8_t reg, uint8_t mask)
 
 void i8080_gensub(intel8080_t *cpu, uint8_t val)
 {
-	uint8_t a = cpu->registers.a;
+	uint16_t a, b;
+	// Subtract by adding with two-complement of val. Carry-flag meaning becomes inverted since we add.
+	a = cpu->registers.a;
+	b = 0x100 - val;
 
-	a = a - val;
-
-	if(a > cpu->registers.a)
-		i8080_set_flag(cpu, FLAGS_CARRY);
-	else
-		i8080_clear_flag(cpu, FLAGS_CARRY);
-
-	if((a & 0xf) > (cpu->registers.a & 0xf))
-		i8080_clear_flag(cpu, FLAGS_H);
-	else
+	if(i8080_check_half_carry(a, b))
 		i8080_set_flag(cpu, FLAGS_H);
+	else
+		i8080_clear_flag(cpu, FLAGS_H);
+	
 
-	cpu->registers.a = a;
+	if(i8080_check_carry(a, b))
+		i8080_clear_flag(cpu, FLAGS_CARRY);
+	else
+		i8080_set_flag(cpu, FLAGS_CARRY);
+
+	a += b ;
+
+	cpu->registers.a = a & 0xff;
 
 	i8080_update_flags(cpu, REGISTER_A, FLAGS_ZERO | FLAGS_SIGN | FLAGS_PARITY | FLAGS_CARRY | FLAGS_H);
 }
@@ -397,23 +401,23 @@ uint8_t i8080_xchg(intel8080_t *cpu)
 	return CYCLES_XCHG;
 }
 
-void i8080_genadd(intel8080_t *cpu, uint8_t val)
+void i8080_genadd(intel8080_t *cpu, uint16_t val)
 {
 	uint8_t a;
 
-	a = cpu->registers.a + val;
+	a = i8080_regread(cpu, REGISTER_A);
 
-	if(i8080_check_carry(cpu->registers.a, val))
-		i8080_set_flag(cpu, FLAGS_CARRY);
-	else
-		i8080_clear_flag(cpu, FLAGS_CARRY);
-
-	if(i8080_check_half_carry(cpu->registers.a, val))
+	if(i8080_check_half_carry(a, val))
 		i8080_set_flag(cpu, FLAGS_H);
 	else
 		i8080_clear_flag(cpu, FLAGS_H);
 
-	cpu->registers.a = a;
+	if(i8080_check_carry(a, val))
+		i8080_set_flag(cpu, FLAGS_CARRY);
+	else
+		i8080_clear_flag(cpu, FLAGS_CARRY);
+
+	cpu->registers.a += val;
 
 	i8080_update_flags(cpu, REGISTER_A, FLAGS_ZERO | FLAGS_SIGN | FLAGS_PARITY | FLAGS_CARRY | FLAGS_H);
 }
@@ -438,7 +442,7 @@ uint8_t i8080_adi(intel8080_t *cpu)
 uint8_t i8080_adc(intel8080_t *cpu)
 {
 	uint8_t source = SOURCE(cpu->current_op_code);
-	uint8_t val = i8080_regread(cpu, source);
+	uint16_t val = i8080_regread(cpu, source);
 
 	if(cpu->registers.flags & FLAGS_CARRY)
 		val++;
@@ -449,7 +453,7 @@ uint8_t i8080_adc(intel8080_t *cpu)
 
 uint8_t i8080_aci(intel8080_t *cpu)
 {
-	uint8_t val;
+	uint16_t val;
 	val = cpu->read8(cpu->registers.pc+1);
 	if(cpu->registers.flags & FLAGS_CARRY)
 		val++;
@@ -477,7 +481,7 @@ uint8_t i8080_sui(intel8080_t *cpu)
 uint8_t i8080_sbb(intel8080_t *cpu)
 {
 	uint8_t source = SOURCE(cpu->current_op_code);
-	uint8_t val = i8080_regread(cpu, source);
+	uint16_t val = i8080_regread(cpu, source);
 
 	if(cpu->registers.flags & FLAGS_CARRY)
 		val++;
@@ -489,7 +493,7 @@ uint8_t i8080_sbb(intel8080_t *cpu)
 
 uint8_t i8080_sbi(intel8080_t *cpu)
 {
-	uint8_t val;
+	uint16_t val;
 	val = cpu->read8(cpu->registers.pc+1);
 	if(cpu->registers.flags & FLAGS_CARRY)
 		val++;
@@ -701,7 +705,7 @@ uint8_t i8080_in(intel8080_t *cpu)
 		break;
 	default:
 		cpu->registers.a = 0xff;
-		printf("IN PORT %x\n", cpu->data_bus);
+		//printf("IN PORT %x\n", cpu->data_bus);
 		break;
 	}
 
@@ -731,7 +735,7 @@ uint8_t i8080_out(intel8080_t *cpu)
 		cpu->term_out(cpu->registers.a);
 		break;
 	default:
-		printf("OUT PORT %x, DATA: %x\n", cpu->data_bus, cpu->registers.a);
+		//printf("OUT PORT %x, DATA: %x\n", cpu->data_bus, cpu->registers.a);
 		break;
 	}
 	cpu->registers.pc+=2;
@@ -1127,7 +1131,7 @@ void i8080_cycle(intel8080_t *cpu)
 		i8080_daa(cpu);
 	else
 	{
-		printf("Unknown opcode!\n");
+		//printf("Unknown opcode!\n");
 		while(1);
 	}
 	i8080_fetch_next_op(cpu);

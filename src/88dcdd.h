@@ -20,9 +20,13 @@
 #define SECTOR 137
 #define TRACK (32*SECTOR)
 
-typedef struct 
+typedef struct
 {
+#ifdef ARDUINO
+	File fp;
+#else
 	FILE* fp;
+#endif
 	uint8_t track;
 	uint8_t sector;
 	uint8_t status;
