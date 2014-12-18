@@ -128,6 +128,17 @@ void write16(uint16_t address, uint16_t val)
 	*(uint16_t*)&memory[address] = val;
 }
 
+void load_mem_file(const char* filename, size_t offset)
+{
+	size_t size;
+	FILE* fp = fopen(filename, "rb");
+	fseek(fp, 0, SEEK_END);
+	size = ftell(fp);
+	fseek(fp, 0, SEEK_SET);
+	fread(&memory[offset], 1, size, fp);
+	fclose(fp);
+}
+
 int main(int argc, char *argv[])
 {
 	FILE* fp;
@@ -177,7 +188,7 @@ int main(int argc, char *argv[])
 		printf("Could not bind\n");
 	}
 
-	printf("Waiting for terminal...\n");
+	printf("Waiting for terminal on port 8800...\n");
 
 	do
 	{
@@ -190,7 +201,7 @@ int main(int argc, char *argv[])
 	fcntl(client_sock, F_SETFL, O_NONBLOCK);
 #endif
 
-	printf("Got connection? (%d)\n", client_sock);
+	printf("Got connection.\n", client_sock);
 
 	disk_controller.disk_function = disk_function;
 	disk_controller.disk_select = disk_select;
@@ -201,46 +212,22 @@ int main(int argc, char *argv[])
 
 	i8080_reset(&cpu, term_in, term_out, read8, write8, read16, write16, &disk_controller);
 
-	// Load disk rom into memory
-	fp = fopen("software/88dskrom.bin", "rb");
-	fseek(fp, 0, SEEK_END);
-	size = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
-	fread(&memory[0xff00], 1, size, fp);
-	fclose(fp);
+	
+	load_mem_file("software/ROMs/DBL.bin", 0xff00);
 
-	// Load basic into memory
-	fp = fopen("software/4kbas32.bin", "rb");
-	fseek(fp, 0, SEEK_END);
-	size = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
-	fread(&memory[0x0000], 1, size, fp);
-	fclose(fp);
-
-	/*i8080_examine(&cpu, 0x00);
-        i8080_deposit(&cpu, 0x06);
-        i8080_deposit_next(&cpu, 'C');
-        i8080_deposit_next(&cpu, 0x78);
-        i8080_deposit_next(&cpu, 0xD3);
-        i8080_deposit_next(&cpu, 0x01);
-        i8080_deposit_next(&cpu, 0xc3);
-        i8080_deposit_next(&cpu, 0x00);
-        i8080_deposit_next(&cpu, 0x00);*/
+	load_mem_file("software/ROMs/8K Basic/8kBas_e0.bin", 0xe000);
+	load_mem_file("software/ROMs/8K Basic/8kBas_e8.bin", 0xe800);
+	load_mem_file("software/ROMs/8K Basic/8kBas_f0.bin", 0xf000);
+	load_mem_file("software/ROMs/8K Basic/8kBas_f8.bin", 0xf800);
 
 	// Mount diskette 1 (CP/M OS) and 2 (Tools)
-	disk_drive.disk1.fp = fopen("software/Cpm22.dsk", "r+b");
-	disk_drive.disk2.fp = fopen("software/empty.dsk", "r+b");
+	disk_drive.disk1.fp = fopen("software/CPM 2.2/cpm63k.dsk", "r+b");
+	disk_drive.disk2.fp = fopen("software/CPM 2.2/bdsc.dsk", "r+b");
 	disk_drive.nodisk.status = 0xff;
 
 	i8080_examine(&cpu, 0xff00); // ff00 loads from disk, 0000 loads basic
 	while(1)
 	{
-#ifdef WIN32
-		if(get_key(VK_F1))
-		{
-			load_file(&cpu);
-		}
-#endif
 		//if(cpu.registers.pc == breakpoint)
 		//	__asm int 3;
 		i8080_cycle(&cpu);

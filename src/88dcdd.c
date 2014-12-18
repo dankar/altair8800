@@ -57,6 +57,7 @@ void disk_function(uint8_t b)
 #else
 		fseek(disk_drive.current->fp, TRACK * disk_drive.current->track, SEEK_SET);
 #endif
+		//printf("Track: %d\n", disk_drive.current->track);
 	}
 	if(b & CONTROL_STEP_OUT)
 	{
@@ -65,10 +66,11 @@ void disk_function(uint8_t b)
 		if(disk_drive.current->track == 0)
 			set_status(STATUS_TRACK_0);
 #ifdef ARDUINO
-                disk_drive.current->fp.seek(TRACK * disk_drive.current->track);
+		disk_drive.current->fp.seek(TRACK * disk_drive.current->track);
 #else
-                fseek(disk_drive.current->fp, TRACK * disk_drive.current->track, SEEK_SET);
+		fseek(disk_drive.current->fp, TRACK * disk_drive.current->track, SEEK_SET);
 #endif
+		//printf("Track: %d\n", disk_drive.current->track);
 	}
 	if(b & CONTROL_HEAD_LOAD)
 	{
@@ -114,7 +116,7 @@ uint8_t sector()
 
 	ret_val = disk_drive.current->sector << 1;
 
-	//printf("Current sector: %d (%X) (bytes per track: %d)\n", current_sector, ret_val, TRACK);
+	//printf("Current sector: %d (%X) (bytes per track: %d)\n", disk_drive.current->sector, ret_val, TRACK);
 
 	disk_drive.current->sector++;
 	return ret_val;
@@ -125,7 +127,11 @@ void write(uint8_t b)
 	uint32_t err = 0;
 
 	//printf("Write %d (byte in sector: %d)\n", b, disk_drive.current->write_status);
-	//disk_drive.current->fp.write(&b, 1);
+#ifdef ARDUINO
+	disk_drive.current->fp.write(&b, 1);
+#else
+	fwrite(&b, 1, 1, disk_drive.current->fp);
+#endif
 	if(disk_drive.current->write_status == 137)
 	{
 		disk_drive.current->write_status = 0;
