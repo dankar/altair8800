@@ -260,7 +260,7 @@ void i8080_update_flags(intel8080_t *cpu, uint8_t reg, uint8_t mask)
 	}
 }
 
-void i8080_gensub(intel8080_t *cpu, uint8_t val)
+void i8080_gensub(intel8080_t *cpu, uint16_t val)
 {
 	uint16_t a, b;
 	// Subtract by adding with two-complement of val. Carry-flag meaning becomes inverted since we add.

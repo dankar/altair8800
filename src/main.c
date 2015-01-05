@@ -147,9 +147,6 @@ void load_mem_file(const char* filename, size_t offset)
 
 int main(int argc, char *argv[])
 {
-	FILE* fp;
-	size_t size;
-	unsigned int written;
 	uint32_t counter = 0;
 	unsigned long ok = 1;
 	char yes = 1;
@@ -159,7 +156,6 @@ int main(int argc, char *argv[])
 	uint16_t breakpoint = 0x0;
 	disk_controller_t disk_controller;
 	intel8080_t cpu;
-	int result;
 	uint32_t test = 0;
 
 #ifdef WIN32
@@ -219,7 +215,7 @@ int main(int argc, char *argv[])
 
 	i8080_reset(&cpu, term_in, term_out, read8, write8, read16, write16, &disk_controller);
 
-	
+
 	load_mem_file("software/ROMs/DBL.bin", 0xff00);
 
 	load_mem_file("software/ROMs/8K Basic/8kBas_e0.bin", 0xe000);
@@ -235,7 +231,7 @@ int main(int argc, char *argv[])
 	disk_drive.nodisk.status = 0xff;
 
 	i8080_examine(&cpu, 0xff00); // ff00 loads from disk, e000 loads basic
-	
+
 	while(1)
 	{
 		//if(cpu.registers.pc == breakpoint)

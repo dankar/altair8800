@@ -1,4 +1,7 @@
 build-uno/
+
 *.c
+
 *.h
+
 *.cpp
