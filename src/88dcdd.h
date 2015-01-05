@@ -17,8 +17,8 @@
 #define CONTROL_HCS			64
 #define CONTROL_WE			128
 
-#define SECTOR 137
-#define TRACK (32*SECTOR)
+#define SECTOR 137UL
+#define TRACK (32UL*SECTOR)
 
 typedef struct
 {

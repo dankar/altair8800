@@ -71,13 +71,10 @@ void write16(uint16_t address, uint16_t val)
 	write8(address+1, (val >> 8) & 0xff);
 }
 
-File rom;
-uint8_t buffer[512];
-
 void load_to_mem(const char *filename, size_t offset)
 {
 	uint16_t counter = 0;
-	rom = SD.open(filename);
+	File rom = SD.open(filename);
 
 	if(!rom)
 	{
@@ -138,7 +135,11 @@ void setup()
                 uint8_t data = SPI.transfer(0); // data
                 digitalWrite(5, HIGH);
 
-		Serial.println(data);
+		if(i != data)
+		{
+			Serial.println("M");
+			return;
+		}
         }
 
 	load_to_mem("88dskrom.bin", 0xff00);

@@ -6,6 +6,8 @@
 #endif
 #include "88dcdd.h"
 
+//#define DISK_DEBUG
+
 disks disk_drive;
 
 void set_status(uint8_t bit)
@@ -39,13 +41,28 @@ void disk_select(uint8_t b)
 
 uint8_t disk_status()
 {
-	//printf("Returning status %d for disk\n", dstatus);
+#ifdef DISK_DEBUG
+#ifdef ARDUINO
+	Serial.print("Returning status ");
+	Serial.print(disk_drive.current->status);
+	Serial.println(" for disk");
+#else
+	printf("Returning status %d for disk\n", disk_drive.current->status);
+#endif
+#endif
 	return disk_drive.current->status;
 }
 
 void disk_function(uint8_t b)
 {
-	//printf("Disk function %d\n", b);
+#ifdef DISK_DEBUG
+#ifdef ARDUINO
+	Serial.print("Disk function ");
+	Serial.println(b);
+#else
+	printf("Disk function %d\n", b);
+#endif
+#endif
 
 	if(b & CONTROL_STEP_IN)
 	{
@@ -57,7 +74,15 @@ void disk_function(uint8_t b)
 #else
 		fseek(disk_drive.current->fp, TRACK * disk_drive.current->track, SEEK_SET);
 #endif
-		//printf("Track: %d\n", disk_drive.current->track);
+
+#ifdef DISK_DEBUG
+#ifdef ARDUINO
+		Serial.print("Track seek to : ");
+		Serial.println(TRACK * disk_drive.current->track);
+#else
+		printf("Track seek to : %d\n", TRACK * disk_drive.current->track);
+#endif
+#endif
 	}
 	if(b & CONTROL_STEP_OUT)
 	{
@@ -70,7 +95,14 @@ void disk_function(uint8_t b)
 #else
 		fseek(disk_drive.current->fp, TRACK * disk_drive.current->track, SEEK_SET);
 #endif
-		//printf("Track: %d\n", disk_drive.current->track);
+#ifdef DISK_DEBUG
+#ifdef ARDUINO
+                Serial.print("Track seek to : ");
+                Serial.println(TRACK * disk_drive.current->track);
+#else
+                printf("Track seek to : %d\n", TRACK * disk_drive.current->track);
+#endif
+#endif
 	}
 	if(b & CONTROL_HEAD_LOAD)
 	{
@@ -115,8 +147,19 @@ uint8_t sector()
 #endif
 
 	ret_val = disk_drive.current->sector << 1;
-
-	//printf("Current sector: %d (%X) (bytes per track: %d)\n", disk_drive.current->sector, ret_val, TRACK);
+#ifdef DISK_DEBUG  
+#ifdef ARDUINO
+        Serial.print("Current sector: ");
+	Serial.print(disk_drive.current->sector);
+	Serial.print(" (");
+	Serial.print(ret_val, HEX);
+	Serial.print(") (bytes per track: ");
+	Serial.print(TRACK);
+	Serial.println(")");
+#else
+	printf("Current sector: %d (%X) (bytes per track: %d)\n", disk_drive.current->sector, ret_val, TRACK);
+#endif
+#endif
 
 	disk_drive.current->sector++;
 	return ret_val;
@@ -125,8 +168,17 @@ uint8_t sector()
 void write(uint8_t b)
 {
 	uint32_t err = 0;
-
-	//printf("Write %d (byte in sector: %d)\n", b, disk_drive.current->write_status);
+#ifdef DISK_DEBUG
+#ifdef ARDUINO
+        Serial.print("Write ");
+        Serial.print(b);
+        Serial.print(" (byte in sector: ");
+        Serial.print(disk_drive.current->write_status);
+        Serial.println(")");
+#else
+	printf("Write %d (byte in sector: %d)\n", b, disk_drive.current->write_status);
+#endif
+#endif
 #ifdef ARDUINO
 	disk_drive.current->fp.write(&b, 1);
 #else
@@ -136,7 +188,13 @@ void write(uint8_t b)
 	{
 		disk_drive.current->write_status = 0;
 		clear_status(STATUS_ENWD);
-		//printf("Disabling clear\n");
+#ifdef DISK_DEBUG
+#ifdef ARDUINO
+		Serial.println("Disabling clear");
+#else
+		printf("Disabling clear\n");
+#endif
+#endif
 	}
 	else
 		disk_drive.current->write_status++;
@@ -154,6 +212,17 @@ uint8_t read()
 #endif
 
 	bytes++;
-	//printf("Reading byte %d (%x)\n", bytes, b);
+
+#ifdef DISK_DEBUG
+#ifdef ARDUINO
+        Serial.print("Reading byte ");
+        Serial.print(bytes);
+        Serial.print(" (");
+        Serial.print(b, HEX);
+        Serial.println(")");
+#else
+	printf("Reading byte %d (%x)\n", bytes, b);
+#endif
+#endif
 	return b;
 }
