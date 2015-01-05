@@ -110,22 +110,28 @@ const char *byte_to_binary(int x)
 
 uint8_t read8(uint16_t address)
 {
-	return memory[address];
+	if(address < 64*1024)
+		return memory[address];
+	return 0;
 }
 
 void write8(uint16_t address, uint8_t val)
 {
-	memory[address] = val;
+	if(address < 64*1024)
+		memory[address] = val;
 }
 
 uint16_t read16(uint16_t address)
 {
-	return *(uint16_t*)&memory[address];
+	if(address < 64*1024)
+		return *(uint16_t*)&memory[address];
+	return 0;
 }
 
 void write16(uint16_t address, uint16_t val)
 {
-	*(uint16_t*)&memory[address] = val;
+	if(address < 64*1024)
+		*(uint16_t*)&memory[address] = val;
 }
 
 void load_mem_file(const char* filename, size_t offset)
@@ -154,6 +160,7 @@ int main(int argc, char *argv[])
 	disk_controller_t disk_controller;
 	intel8080_t cpu;
 	int result;
+	uint32_t test = 0;
 
 #ifdef WIN32
 	WSADATA wsaData;
@@ -222,15 +229,26 @@ int main(int argc, char *argv[])
 
 	// Mount diskette 1 (CP/M OS) and 2 (Tools)
 	disk_drive.disk1.fp = fopen("software/CPM 2.2/cpm63k.dsk", "r+b");
+	//disk_drive.disk1.fp = fopen("software/BASIC/Floppy Disk/Disk Basic Ver 300-5-F.dsk", "r+b");
 	disk_drive.disk2.fp = fopen("software/CPM 2.2/bdsc.dsk", "r+b");
+	//disk_drive.disk2.fp = fopen("software/BASIC/Floppy Disk/Games on 300-5-F.dsk", "r+b");
 	disk_drive.nodisk.status = 0xff;
 
-	i8080_examine(&cpu, 0xff00); // ff00 loads from disk, 0000 loads basic
+	i8080_examine(&cpu, 0xff00); // ff00 loads from disk, e000 loads basic
+	
 	while(1)
 	{
 		//if(cpu.registers.pc == breakpoint)
 		//	__asm int 3;
 		i8080_cycle(&cpu);
+
+		test++;
+
+		if(test == 1000)
+		{
+			test = 0;
+			//Sleep(1);
+		}
 
 		//dump_regs(&cpu);
 	}

@@ -698,7 +698,14 @@ uint8_t i8080_in(intel8080_t *cpu)
 			cpu->registers.a |= 0x1;
 		break;
 	case 0x11: // 2SIO port 1, read
-		cpu->registers.a = character;
+		if(character)
+		{
+			cpu->registers.a = character;
+			character = 0;
+		}
+		else
+			cpu->registers.a = cpu->term_in();
+		
 		break;
 	case 0xff: // Front panel switches
 		cpu->registers.a = 0x00;
@@ -1014,6 +1021,7 @@ uint8_t i8080_daa(intel8080_t *cpu)
 void i8080_cycle(intel8080_t *cpu)
 {
 	uint8_t op_code;
+	i8080_fetch_next_op(cpu);
 
 	op_code = cpu->current_op_code = cpu->data_bus;
 
@@ -1134,5 +1142,4 @@ void i8080_cycle(intel8080_t *cpu)
 		//printf("Unknown opcode!\n");
 		while(1);
 	}
-	i8080_fetch_next_op(cpu);
 }

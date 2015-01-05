@@ -15,8 +15,6 @@ uint32_t start_time = 0;
 uint32_t end_time = 0;
 uint32_t counter = 0;
 
-File memory;
-
 void term_out(uint8_t c)
 {
 	Serial.write(c & 0x7f);
@@ -36,31 +34,41 @@ uint8_t term_in()
 
 uint8_t read8(uint16_t address)
 {
-	memory.seek(address);
-	return memory.read();
+	uint8_t data;
+	digitalWrite(5, LOW);
+        SPI.transfer(3); // read byte
+        SPI.transfer(0);
+        SPI.transfer((address >> 8) & 0xff);
+        SPI.transfer(address & 0xff); // 24 bit address
+        data = SPI.transfer(0x00); // data
+        digitalWrite(5, HIGH);
+	return data;
 }
 
 void write8(uint16_t address, uint8_t val)
 {
-	memory.seek(address);
-	memory.write(val);
+	digitalWrite(5, LOW);
+        SPI.transfer(2); // write byte
+        SPI.transfer(0);
+        SPI.transfer((address >> 8) & 0xff);
+        SPI.transfer(address & 0xff); // 24 bit address
+        SPI.transfer(val); // data
+        digitalWrite(5, HIGH);
 }
 
 uint16_t read16(uint16_t address)
 {
 	uint16_t result = 0;
-	memory.seek(address);
-	result = memory.read();
-	result |= memory.read() << 8;
+	result = read8(address);
+	result |= read8(address+1) << 8;
 
 	return result;
 }
 
 void write16(uint16_t address, uint16_t val)
 {
-	memory.seek(address);
-	memory.write((uint8_t)(val & 0xff));
-	memory.write((uint8_t)(val >> 8));
+	write8(address, val & 0xff);
+	write8(address+1, (val >> 8) & 0xff);
 }
 
 File rom;
@@ -68,6 +76,7 @@ uint8_t buffer[512];
 
 void load_to_mem(const char *filename, size_t offset)
 {
+	uint16_t counter = 0;
 	rom = SD.open(filename);
 
 	if(!rom)
@@ -78,60 +87,60 @@ void load_to_mem(const char *filename, size_t offset)
 	}
 
 	rom.seek(0);
-	memory.seek(offset);
 
 	while(rom.available())
 	{
-		int i;
-		for(i = 0; i < 512; i++)
-		{
-			if(rom.available())
-				buffer[i] = rom.read();
-			else
-				break;
-		}
-
-		memory.write(buffer, i);
+		write8(counter++ + offset, rom.read());
 	}
 
 	rom.close();
 }
 
-void clear_mem()
-{
-	
-	memset(buffer, 0, 512);
-
-	for(int i = 0; i < 128; i++)
-	{
-		memory.write(buffer, 512);
-	}
-}
-		
-
 void setup()
 {
 	Serial.begin(115200);
 
+	pinMode(5, OUTPUT);
+	digitalWrite(5, HIGH);
+
+	SPI.setClockDivider(SPI_CLOCK_DIV2);
+	
 	if(!SD.begin(4))
 	{
 		Serial.println("SD");
 		return;
 	}
 
-	//SPI.setClockDivider(SPI_CLOCK_DIV2);
+	digitalWrite(5, LOW);
+	SPI.transfer(1); // Mode register
+	SPI.transfer(0); // Byte mode
+	digitalWrite(5, HIGH);
 
-	memory = SD.open("memory", FILE_WRITE);
-	if(!memory)
+	for(int i = 0; i < 10; i++)
 	{
-		Serial.println("MEM");
-		return;
+		digitalWrite(5, LOW);
+		SPI.transfer(2); // write byte
+		SPI.transfer(0);
+		SPI.transfer(0);
+		SPI.transfer(i); // 24 bit address
+		SPI.transfer(i); // data
+		digitalWrite(5, HIGH);
 	}
 
-	memory.seek(0);
-	clear_mem();
 
-	load_to_mem("4kbas32.bin", 0x0000);
+	for(int i = 0; i < 10; i++)
+        {
+                digitalWrite(5, LOW);
+                SPI.transfer(3); // read byte
+                SPI.transfer(0);
+                SPI.transfer(0);
+                SPI.transfer(i); // 24 bit address
+                uint8_t data = SPI.transfer(0); // data
+                digitalWrite(5, HIGH);
+
+		Serial.println(data);
+        }
+
 	load_to_mem("88dskrom.bin", 0xff00);
 
 	disk_controller.disk_select = disk_select;
@@ -144,13 +153,10 @@ void setup()
 	memset(&disk_drive, 0, sizeof(disks));
 	
 	disk_drive.disk1.fp = SD.open("disk1.dsk", FILE_WRITE);
-	if(!disk_drive.disk1.fp)
-		Serial.println("D1");	
-	/*disk_drive.disk2.fp = SD.open("disk2.dsk", FILE_WRITE);
-	if(!disk_drive.disk2.fp)
-		Serial.println("No disk 2");*/
+	disk_drive.disk2.fp = SD.open("disk2.dsk", FILE_WRITE);
+	if(!disk_drive.disk2.fp || !disk_drive.disk1.fp)
+		Serial.println("D");
 
-	disk_drive.disk2.status = 0xff;
 	disk_drive.nodisk.status = 0xff;
 
 	i8080_reset(&cpu, term_in, term_out, read8, write8, read16, write16, &disk_controller);
@@ -159,20 +165,12 @@ void setup()
 	Serial.println("OK!");
 }
 
-char spi_transfer(volatile char data)
-{
-	SPDR = data;
-	while(!(SPSR & (1 << SPIF)));
-	return SPDR;
-}
-
 void loop()
 {
 	i8080_cycle(&cpu);
 
-	digitalWrite(5, LOW);
-	spi_transfer((uint8_t)(cpu.address_bus >> 8));
-	spi_transfer((uint8_t)(cpu.address_bus & 0xff));
-	spi_transfer(cpu.data_bus);
-	digitalWrite(5, HIGH);
+	SPI.transfer(0x00);
+	SPI.transfer(0x00);
+	SPI.transfer(0x00);
+	SPI.transfer(0x00);
 }
