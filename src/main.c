@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
 	// Mount diskette 1 (CP/M OS) and 2 (Tools)
 	disk_drive.disk1.fp = fopen("software/CPM 2.2/cpm63k.dsk", "r+b");
 	//disk_drive.disk1.fp = fopen("software/BASIC/Floppy Disk/Disk Basic Ver 300-5-F.dsk", "r+b");
-	disk_drive.disk2.fp = fopen("software/CPM 2.2/bdsc.dsk", "r+b");
+	disk_drive.disk2.fp = fopen("software/CPM 2.2/zork.dsk", "r+b");
 	//disk_drive.disk2.fp = fopen("software/BASIC/Floppy Disk/Games on 300-5-F.dsk", "r+b");
 	disk_drive.nodisk.status = 0xff;
 
@@ -243,7 +243,7 @@ int main(int argc, char *argv[])
 		if(test == 1000)
 		{
 			test = 0;
-			//Sleep(1);
+			Sleep(1);
 		}
 
 		//dump_regs(&cpu);

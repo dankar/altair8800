@@ -673,6 +673,7 @@ uint8_t i8080_sphl(intel8080_t *cpu)
 
 uint8_t i8080_in(intel8080_t *cpu)
 {
+	uint8_t parity;
 	static uint8_t character = 0;
 	switch(cpu->read8(cpu->registers.pc+1))
 	{
@@ -693,9 +694,14 @@ uint8_t i8080_in(intel8080_t *cpu)
 		break;
 	case 0x10: // 2SIO port 1, status
 		cpu->registers.a = 0x2; // bit 1 == transmit buffer empty
-		character = cpu->term_in();
+		if(!character)
+		{
+			character = cpu->term_in();
+		}
 		if(character)
+		{
 			cpu->registers.a |= 0x1;
+		}
 		break;
 	case 0x11: // 2SIO port 1, read
 		if(character)
@@ -704,8 +710,9 @@ uint8_t i8080_in(intel8080_t *cpu)
 			character = 0;
 		}
 		else
+		{
 			cpu->registers.a = cpu->term_in();
-		
+		}
 		break;
 	case 0xff: // Front panel switches
 		cpu->registers.a = 0x00;
