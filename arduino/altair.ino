@@ -6,7 +6,6 @@
 
 SdFat SD;
 
-
 intel8080_t cpu;
 disk_controller_t disk_controller;
 uint32_t start_time = 0;
@@ -60,7 +59,7 @@ void setup()
 	digitalWrite(5, HIGH);
 
 	
-	if(!SD.begin(4))
+	if(!SD.begin(4, SPI_CLOCK_DIV2))
 	{
 		Serial.println("SD");
 		return;
@@ -69,7 +68,7 @@ void setup()
 	SPI.setClockDivider(SPI_CLOCK_DIV2);
 
 	digitalWrite(5, LOW);
-	SPI.transfer(1); // Mode register
+	SPI.transfer(1); // Write mode register
 	SPI.transfer(0); // Byte mode
 	digitalWrite(5, HIGH);
 
