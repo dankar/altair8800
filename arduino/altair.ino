@@ -1,13 +1,11 @@
 #include <SPI.h>
 #include <SdFat.h>
+#include "intel8080.h"
+#include "88dcdd.h"
+#include "memory.h"
+
 SdFat SD;
 
-extern "C"
-{
-	#include "intel8080.h"
-}
-
-#include "88dcdd.h"
 
 intel8080_t cpu;
 disk_controller_t disk_controller;
@@ -30,45 +28,6 @@ uint8_t term_in()
 	{
 		return 0;
 	}
-}
-
-uint8_t read8(uint16_t address)
-{
-	uint8_t data;
-	digitalWrite(5, LOW);
-        SPI.transfer(3); // read byte
-        SPI.transfer(0);
-        SPI.transfer((address >> 8) & 0xff);
-        SPI.transfer(address & 0xff); // 24 bit address
-        data = SPI.transfer(0x00); // data
-        digitalWrite(5, HIGH);
-	return data;
-}
-
-void write8(uint16_t address, uint8_t val)
-{
-	digitalWrite(5, LOW);
-        SPI.transfer(2); // write byte
-        SPI.transfer(0);
-        SPI.transfer((address >> 8) & 0xff);
-        SPI.transfer(address & 0xff); // 24 bit address
-        SPI.transfer(val); // data
-        digitalWrite(5, HIGH);
-}
-
-uint16_t read16(uint16_t address)
-{
-	uint16_t result = 0;
-	result = read8(address);
-	result |= read8(address+1) << 8;
-
-	return result;
-}
-
-void write16(uint16_t address, uint16_t val)
-{
-	write8(address, val & 0xff);
-	write8(address+1, (val >> 8) & 0xff);
 }
 
 void load_to_mem(const char *filename, size_t offset)
@@ -160,7 +119,7 @@ void setup()
 
 	disk_drive.nodisk.status = 0xff;
 
-	i8080_reset(&cpu, term_in, term_out, read8, write8, read16, write16, &disk_controller);
+	i8080_reset(&cpu, term_in, term_out, &disk_controller);
 	i8080_examine(&cpu, 0xff00);
 
 	Serial.println("OK!");

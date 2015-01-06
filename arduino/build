@@ -3,7 +3,7 @@
 cp ../src/88dcdd.h .
 cp ../src/88dcdd.c ./88dcdd.cpp
 cp ../src/intel8080.h .
-cp ../src/intel8080.c .
+cp ../src/intel8080.c ./intel8080.cpp
 cp ../src/op_codes.h .
 
 make
