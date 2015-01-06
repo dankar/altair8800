@@ -59,7 +59,6 @@ void setup()
 	pinMode(5, OUTPUT);
 	digitalWrite(5, HIGH);
 
-	SPI.setClockDivider(SPI_CLOCK_DIV2);
 	
 	if(!SD.begin(4))
 	{
@@ -67,39 +66,12 @@ void setup()
 		return;
 	}
 
+	SPI.setClockDivider(SPI_CLOCK_DIV2);
+
 	digitalWrite(5, LOW);
 	SPI.transfer(1); // Mode register
 	SPI.transfer(0); // Byte mode
 	digitalWrite(5, HIGH);
-
-	for(int i = 0; i < 10; i++)
-	{
-		digitalWrite(5, LOW);
-		SPI.transfer(2); // write byte
-		SPI.transfer(0);
-		SPI.transfer(0);
-		SPI.transfer(i); // 24 bit address
-		SPI.transfer(i); // data
-		digitalWrite(5, HIGH);
-	}
-
-
-	for(int i = 0; i < 10; i++)
-        {
-                digitalWrite(5, LOW);
-                SPI.transfer(3); // read byte
-                SPI.transfer(0);
-                SPI.transfer(0);
-                SPI.transfer(i); // 24 bit address
-                uint8_t data = SPI.transfer(0); // data
-                digitalWrite(5, HIGH);
-
-		if(i != data)
-		{
-			Serial.println("M");
-			return;
-		}
-        }
 
 	load_to_mem("88dskrom.bin", 0xff00);
 

@@ -167,7 +167,6 @@ uint8_t sector()
 
 void write(uint8_t b)
 {
-	uint32_t err = 0;
 #ifdef DISK_DEBUG
 #ifdef ARDUINO
         Serial.print("Write ");

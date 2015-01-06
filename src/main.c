@@ -108,32 +108,6 @@ const char *byte_to_binary(int x)
 }
 
 
-uint8_t read8(uint16_t address)
-{
-	if(address < 64*1024)
-		return memory[address];
-	return 0;
-}
-
-void write8(uint16_t address, uint8_t val)
-{
-	if(address < 64*1024)
-		memory[address] = val;
-}
-
-uint16_t read16(uint16_t address)
-{
-	if(address < 64*1024)
-		return *(uint16_t*)&memory[address];
-	return 0;
-}
-
-void write16(uint16_t address, uint16_t val)
-{
-	if(address < 64*1024)
-		*(uint16_t*)&memory[address] = val;
-}
-
 void load_mem_file(const char* filename, size_t offset)
 {
 	size_t size;
@@ -156,7 +130,6 @@ int main(int argc, char *argv[])
 	uint16_t breakpoint = 0x0;
 	disk_controller_t disk_controller;
 	intel8080_t cpu;
-	uint32_t test = 0;
 
 #ifdef WIN32
 	WSADATA wsaData;
@@ -204,7 +177,7 @@ int main(int argc, char *argv[])
 	fcntl(client_sock, F_SETFL, O_NONBLOCK);
 #endif
 
-	printf("Got connection.\n", client_sock);
+	printf("Got connection. %d\n", client_sock);
 
 	disk_controller.disk_function = disk_function;
 	disk_controller.disk_select = disk_select;
@@ -213,7 +186,7 @@ int main(int argc, char *argv[])
 	disk_controller.write = write;
 	disk_controller.sector = sector;
 
-	i8080_reset(&cpu, term_in, term_out, read8, write8, read16, write16, &disk_controller);
+	i8080_reset(&cpu, term_in, term_out, &disk_controller);
 
 
 	load_mem_file("software/ROMs/DBL.bin", 0xff00);
@@ -237,15 +210,6 @@ int main(int argc, char *argv[])
 		//if(cpu.registers.pc == breakpoint)
 		//	__asm int 3;
 		i8080_cycle(&cpu);
-
-		test++;
-
-		if(test == 1000)
-		{
-			test = 0;
-			Sleep(1);
-		}
-
 		//dump_regs(&cpu);
 	}
 

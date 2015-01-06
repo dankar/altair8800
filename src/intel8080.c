@@ -3,8 +3,10 @@
 #include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
+#ifdef ARDUINO
 #include <Arduino.h>
 #include <SPI.h>
+#endif
 #include "memory.h"
 #ifdef WIN32
 	#include <Windows.h>
@@ -670,7 +672,6 @@ uint8_t i8080_sphl(intel8080_t *cpu)
 
 uint8_t i8080_in(intel8080_t *cpu)
 {
-	uint8_t parity;
 	static uint8_t character = 0;
 	switch(read8(cpu->registers.pc+1))
 	{

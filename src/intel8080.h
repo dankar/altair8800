@@ -60,12 +60,6 @@ typedef struct
 typedef void (*port_out)(uint8_t b);
 typedef uint8_t (*port_in)();
 
-typedef uint8_t (*mem_read_8)(uint16_t address);
-typedef void (*mem_write_8)(uint16_t address, uint8_t val);
-
-typedef uint16_t (*mem_read_16)(uint16_t address);
-typedef void (*mem_write_16)(uint16_t address, uint16_t val);
-
 typedef struct
 {
 	port_out disk_select;
@@ -88,17 +82,10 @@ typedef struct
 	port_in term_in;
 	port_out term_out;
 
-	mem_read_8 read8;
-	mem_write_8 write8;
-	mem_read_16 read16;
-	mem_write_16 write16;
-
 	disk_controller_t disk_controller;
 } intel8080_t;
 
 void i8080_reset(intel8080_t *cpu, port_in in, port_out out,
-			mem_read_8 _read8, mem_write_8 _write8,
-			mem_read_16 _read16, mem_write_16 _write16,
 			disk_controller_t *disk_controller);
 void i8080_deposit(intel8080_t *cpu, uint8_t data);
 void i8080_deposit_next(intel8080_t *cpu, uint8_t data);
