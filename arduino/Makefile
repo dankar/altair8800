@@ -4,6 +4,6 @@ MONITOR_PORT = /dev/ttyACM0
 ARDUINO_PORT = /dev/ttyACM0
 #AVR_TOOLS_DIR = /usr
 ARDUINO_LIBS = SdFat SPI
-OPTIMIZATION_LEVEL=3
+OPTIMIZATION_LEVEL=2
 CPPFLAGS=-I../src/
 include /usr/share/arduino/Arduino.mk

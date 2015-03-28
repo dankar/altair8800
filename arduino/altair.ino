@@ -3,6 +3,7 @@
 #include "intel8080.h"
 #include "88dcdd.h"
 #include "memory.h"
+#include "pins.h"
 
 SdFat SD;
 
@@ -55,22 +56,25 @@ void setup()
 {
 	Serial.begin(115200);
 
-	pinMode(5, OUTPUT);
-	digitalWrite(5, HIGH);
+	pinMode(MEMORY_CS, OUTPUT);
+	pinMode(LEDS_OE, OUTPUT);
+	digitalWrite(LEDS_OE, LOW);
 
-	
-	if(!SD.begin(4, SPI_CLOCK_DIV2))
+	pinMode(LEDS_LATCH, OUTPUT);
+	digitalWrite(LEDS_LATCH, HIGH);
+
+	if(!SD.begin(SD_CS, SPI_CLOCK_DIV2))
 	{
 		Serial.println("SD");
 		return;
 	}
-
 	SPI.setClockDivider(SPI_CLOCK_DIV2);
 
-	digitalWrite(5, LOW);
+	digitalWrite(MEMORY_CS, LOW);
 	SPI.transfer(1); // Write mode register
 	SPI.transfer(0); // Byte mode
-	digitalWrite(5, HIGH);
+	digitalWrite(MEMORY_CS, HIGH);
+
 
 	load_to_mem("88dskrom.bin", 0xff00);
 
@@ -94,14 +98,10 @@ void setup()
 	i8080_examine(&cpu, 0xff00);
 
 	Serial.println("OK!");
+
 }
 
 void loop()
 {
 	i8080_cycle(&cpu);
-
-	SPI.transfer(0x00);
-	SPI.transfer(0x00);
-	SPI.transfer(0x00);
-	SPI.transfer(0x00);
 }

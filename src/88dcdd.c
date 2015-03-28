@@ -1,8 +1,7 @@
 #include <stdio.h>
-#include <stdint.h>
 #ifdef ARDUINO
-#include <Arduino.h>
-#include <SdFat.h>
+	#include <Arduino.h>
+	#include <SdFat.h>
 #endif
 #include "88dcdd.h"
 

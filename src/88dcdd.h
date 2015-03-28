@@ -1,6 +1,8 @@
 #ifndef _88DCDD_H_
 #define _88DCDD_H_
 
+#include "types.h"
+
 #define STATUS_ENWD			1
 #define STATUS_MOVE_HEAD	2
 #define STATUS_HEAD			4
