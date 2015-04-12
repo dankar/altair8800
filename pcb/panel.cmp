@@ -1,0 +1,724 @@
+Cmp-Mod V01 Created by Cvpcb (after 2015-mar-04 BZR unknown)-product   date = 3/30/2015 10:04:21 PM
+
+BeginCmp
+TimeStamp = /551AA155;
+Reference = D1;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /551AA226;
+Reference = D2;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /551AA24C;
+Reference = D3;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /551AA278;
+Reference = D4;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /551AA2A2;
+Reference = D5;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /551AA2CA;
+Reference = D6;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /551AA2F6;
+Reference = D7;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /551AA324;
+Reference = D8;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518C5FE;
+Reference = D9;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518C604;
+Reference = D10;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518C60A;
+Reference = D11;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518C610;
+Reference = D12;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518C616;
+Reference = D13;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518C61C;
+Reference = D14;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518C622;
+Reference = D15;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518C628;
+Reference = D16;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D360;
+Reference = D17;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D366;
+Reference = D18;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D36C;
+Reference = D19;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D372;
+Reference = D20;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D378;
+Reference = D21;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D37E;
+Reference = D22;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D384;
+Reference = D23;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D38A;
+Reference = D24;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D438;
+Reference = D25;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D43E;
+Reference = D26;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D444;
+Reference = D27;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D44A;
+Reference = D28;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D450;
+Reference = D29;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D456;
+Reference = D30;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D45C;
+Reference = D31;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D462;
+Reference = D32;
+ValeurCmp = LED;
+IdModule  = LEDs:LED-5MM;
+EndCmp
+
+BeginCmp
+TimeStamp = /551BCC90;
+Reference = P1;
+ValeurCmp = CONN_01X09;
+IdModule  = Pin_Headers:Pin_Header_Straight_1x13;
+EndCmp
+
+BeginCmp
+TimeStamp = /551AD3A6;
+Reference = R1;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /551B402C;
+Reference = R2;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /551B4072;
+Reference = R3;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /551B40B4;
+Reference = R4;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /551B413B;
+Reference = R5;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /551B4191;
+Reference = R6;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /551B41F0;
+Reference = R7;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /551B4264;
+Reference = R8;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518C62E;
+Reference = R9;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518C634;
+Reference = R10;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518C63A;
+Reference = R11;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518C640;
+Reference = R12;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518C646;
+Reference = R13;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518C64C;
+Reference = R14;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518C652;
+Reference = R15;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518C658;
+Reference = R16;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D390;
+Reference = R17;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D396;
+Reference = R18;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D39C;
+Reference = R19;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D3A2;
+Reference = R20;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D3A8;
+Reference = R21;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D3AE;
+Reference = R22;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D3B4;
+Reference = R23;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D3BA;
+Reference = R24;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D468;
+Reference = R25;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D46E;
+Reference = R26;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D474;
+Reference = R27;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D47A;
+Reference = R28;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D480;
+Reference = R29;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D486;
+Reference = R30;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D48C;
+Reference = R31;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D492;
+Reference = R32;
+ValeurCmp = 220R;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /552100F7;
+Reference = R33;
+ValeurCmp = 10K;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /551A42FD;
+Reference = R34;
+ValeurCmp = 10K;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /551A4902;
+Reference = R35;
+ValeurCmp = 10K;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /551A49F2;
+Reference = R36;
+ValeurCmp = 10K;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /551A4AD0;
+Reference = R37;
+ValeurCmp = 10K;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /551A4BC2;
+Reference = R38;
+ValeurCmp = 10K;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /551A5A00;
+Reference = R39;
+ValeurCmp = 10K;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /551A5AF0;
+Reference = R40;
+ValeurCmp = 10K;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /551A5BD2;
+Reference = R41;
+ValeurCmp = 10K;
+IdModule  = Resistors_ThroughHole:Resistor_Horizontal_RM10mm;
+EndCmp
+
+BeginCmp
+TimeStamp = /551EE971;
+Reference = SW1;
+ValeurCmp = SWITCH_INV;
+IdModule  = panel:SwitchOnOn;
+EndCmp
+
+BeginCmp
+TimeStamp = /551EF9A0;
+Reference = SW2;
+ValeurCmp = SWITCH_INV;
+IdModule  = panel:SwitchOnOn;
+EndCmp
+
+BeginCmp
+TimeStamp = /551EFA54;
+Reference = SW3;
+ValeurCmp = SWITCH_INV;
+IdModule  = panel:SwitchOnOn;
+EndCmp
+
+BeginCmp
+TimeStamp = /551EFB0A;
+Reference = SW4;
+ValeurCmp = SWITCH_INV;
+IdModule  = panel:SwitchOnOn;
+EndCmp
+
+BeginCmp
+TimeStamp = /551EFBC2;
+Reference = SW5;
+ValeurCmp = SWITCH_INV;
+IdModule  = panel:SwitchOnOn;
+EndCmp
+
+BeginCmp
+TimeStamp = /551EFC80;
+Reference = SW6;
+ValeurCmp = SWITCH_INV;
+IdModule  = panel:SwitchOnOn;
+EndCmp
+
+BeginCmp
+TimeStamp = /551EFE88;
+Reference = SW7;
+ValeurCmp = SWITCH_INV;
+IdModule  = panel:SwitchOnOn;
+EndCmp
+
+BeginCmp
+TimeStamp = /551EFF4A;
+Reference = SW8;
+ValeurCmp = SWITCH_INV;
+IdModule  = panel:SwitchOnOn;
+EndCmp
+
+BeginCmp
+TimeStamp = /551F0DF7;
+Reference = SW9;
+ValeurCmp = SWITCH_INV;
+IdModule  = panel:SwitchOnOn;
+EndCmp
+
+BeginCmp
+TimeStamp = /551F0EBB;
+Reference = SW10;
+ValeurCmp = SWITCH_INV;
+IdModule  = panel:SwitchOnOn;
+EndCmp
+
+BeginCmp
+TimeStamp = /551F0F7D;
+Reference = SW11;
+ValeurCmp = SWITCH_INV;
+IdModule  = panel:SwitchOnOn;
+EndCmp
+
+BeginCmp
+TimeStamp = /551F1043;
+Reference = SW12;
+ValeurCmp = SWITCH_INV;
+IdModule  = panel:SwitchOnOn;
+EndCmp
+
+BeginCmp
+TimeStamp = /551F1117;
+Reference = SW13;
+ValeurCmp = SWITCH_INV;
+IdModule  = panel:SwitchOnOn;
+EndCmp
+
+BeginCmp
+TimeStamp = /551F11E7;
+Reference = SW14;
+ValeurCmp = SWITCH_INV;
+IdModule  = panel:SwitchOnOn;
+EndCmp
+
+BeginCmp
+TimeStamp = /551F1CE5;
+Reference = SW15;
+ValeurCmp = SWITCH_INV;
+IdModule  = panel:SwitchOnOn;
+EndCmp
+
+BeginCmp
+TimeStamp = /551F1DB5;
+Reference = SW16;
+ValeurCmp = SWITCH_INV;
+IdModule  = panel:SwitchOnOn;
+EndCmp
+
+BeginCmp
+TimeStamp = /551A2976;
+Reference = SW17;
+ValeurCmp = SP3T;
+IdModule  = panel:SwitchOnOffOn;
+EndCmp
+
+BeginCmp
+TimeStamp = /551A2AA5;
+Reference = SW18;
+ValeurCmp = SP3T;
+IdModule  = panel:SwitchOnOffOn;
+EndCmp
+
+BeginCmp
+TimeStamp = /551A2BA9;
+Reference = SW19;
+ValeurCmp = SP3T;
+IdModule  = panel:SwitchOnOffOn;
+EndCmp
+
+BeginCmp
+TimeStamp = /551A2C91;
+Reference = SW20;
+ValeurCmp = SP3T;
+IdModule  = panel:SwitchOnOffOn;
+EndCmp
+
+BeginCmp
+TimeStamp = /551A9E20;
+Reference = U1;
+ValeurCmp = 74HC595;
+IdModule  = Housings_DIP:DIP-16__300;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518C5F8;
+Reference = U2;
+ValeurCmp = 74HC595;
+IdModule  = Housings_DIP:DIP-16__300;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D35A;
+Reference = U3;
+ValeurCmp = 74HC595;
+IdModule  = Housings_DIP:DIP-16__300;
+EndCmp
+
+BeginCmp
+TimeStamp = /5518D432;
+Reference = U4;
+ValeurCmp = 74HC595;
+IdModule  = Housings_DIP:DIP-16__300;
+EndCmp
+
+BeginCmp
+TimeStamp = /551A106F;
+Reference = U5;
+ValeurCmp = 23LC1024;
+IdModule  = Housings_DIP:DIP-8__300;
+EndCmp
+
+BeginCmp
+TimeStamp = /551BF8F5;
+Reference = U6;
+ValeurCmp = 74LS165;
+IdModule  = Housings_DIP:DIP-16__300;
+EndCmp
+
+BeginCmp
+TimeStamp = /551C01CB;
+Reference = U7;
+ValeurCmp = 74LS165;
+IdModule  = Housings_DIP:DIP-16__300;
+EndCmp
+
+BeginCmp
+TimeStamp = /5519B129;
+Reference = U8;
+ValeurCmp = 74LS165;
+IdModule  = Housings_DIP:DIP-16__300;
+EndCmp
+
+BeginCmp
+TimeStamp = /551B12BD;
+Reference = U9;
+ValeurCmp = CONN_microSD;
+IdModule  = opendous:Memory_Card_microSD_3M_290805;
+EndCmp
+
+EndListe
