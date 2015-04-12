@@ -19,7 +19,7 @@ uint8_t get_parity(uint8_t val)
 	return !((0x6996 >> val) & 1);
 }
 
-void i8080_reset(intel8080_t *cpu, port_in in, port_out out,
+void i8080_reset(intel8080_t *cpu, port_in in, port_out out, read_sense_switches sense,
                         disk_controller_t *disk_controller)
 {
 	memset(cpu, 0, sizeof(intel8080_t));
@@ -27,6 +27,7 @@ void i8080_reset(intel8080_t *cpu, port_in in, port_out out,
 	cpu->term_out = out;
 	cpu->disk_controller = *disk_controller;
 	cpu->registers.flags = 0x2;
+	cpu->sense = sense;
 }
 
 int i8080_check_carry(uint16_t a, uint16_t b)
@@ -200,8 +201,8 @@ void i8080_examine(intel8080_t *cpu, uint16_t address)
 
 void i8080_examine_next(intel8080_t *cpu)
 {
-	cpu->data_bus = 0x00;
-	i8080_cycle(cpu);
+	cpu->address_bus++;
+	cpu->data_bus = read8(cpu->address_bus);
 }
 
 void i8080_deposit(intel8080_t *cpu, uint8_t data)
@@ -270,7 +271,6 @@ void i8080_gensub(intel8080_t *cpu, uint16_t val)
 		i8080_set_flag(cpu, FLAGS_H);
 	else
 		i8080_clear_flag(cpu, FLAGS_H);
-	
 
 	if(i8080_check_carry(a, b))
 		i8080_clear_flag(cpu, FLAGS_CARRY);
@@ -713,7 +713,7 @@ uint8_t i8080_in(intel8080_t *cpu)
 		}
 		break;
 	case 0xff: // Front panel switches
-		cpu->registers.a = 0x00;
+		cpu->registers.a = cpu->sense();
 		break;
 	default:
 		cpu->registers.a = 0xff;

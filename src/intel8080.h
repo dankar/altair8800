@@ -59,6 +59,7 @@ typedef struct
 
 typedef void (*port_out)(uint8_t b);
 typedef uint8_t (*port_in)();
+typedef uint8_t (*read_sense_switches)();
 
 typedef struct
 {
@@ -81,11 +82,12 @@ typedef struct
 
 	port_in term_in;
 	port_out term_out;
+	read_sense_switches sense;
 
 	disk_controller_t disk_controller;
 } intel8080_t;
 
-void i8080_reset(intel8080_t *cpu, port_in in, port_out out,
+void i8080_reset(intel8080_t *cpu, port_in in, port_out out, read_sense_switches sense,
 			disk_controller_t *disk_controller);
 void i8080_deposit(intel8080_t *cpu, uint8_t data);
 void i8080_deposit_next(intel8080_t *cpu, uint8_t data);

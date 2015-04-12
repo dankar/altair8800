@@ -21,4 +21,7 @@ Grey (on SD) = CS		(To 6)
 #define MEMORY_CS 5
 #define SD_CS 6
 
+#define SWITCHES_LOAD 7
+#define SWITCHES_CS 3
+
 #endif

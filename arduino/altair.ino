@@ -4,6 +4,7 @@
 #include "88dcdd.h"
 #include "memory.h"
 #include "pins.h"
+#include "panel.h"
 
 SdFat SD;
 
@@ -56,8 +57,17 @@ void setup()
 {
 	Serial.begin(115200);
 
+	pinMode(SWITCHES_LOAD, OUTPUT);
+	pinMode(SWITCHES_CS, OUTPUT);
+
+	digitalWrite(SWITCHES_LOAD, HIGH);
+	digitalWrite(SWITCHES_CS, HIGH);
+
 	pinMode(MEMORY_CS, OUTPUT);
+	digitalWrite(MEMORY_CS, HIGH);
+
 	pinMode(LEDS_OE, OUTPUT);
+
 	digitalWrite(LEDS_OE, LOW);
 
 	pinMode(LEDS_LATCH, OUTPUT);
@@ -74,7 +84,6 @@ void setup()
 	SPI.transfer(1); // Write mode register
 	SPI.transfer(0); // Byte mode
 	digitalWrite(MEMORY_CS, HIGH);
-
 
 	load_to_mem("88dskrom.bin", 0xff00);
 
@@ -94,14 +103,66 @@ void setup()
 
 	disk_drive.nodisk.status = 0xff;
 
-	i8080_reset(&cpu, term_in, term_out, &disk_controller);
-	i8080_examine(&cpu, 0xff00);
-
-	Serial.println("OK!");
-
+	i8080_reset(&cpu, term_in, term_out, sense_switches, &disk_controller);
+	i8080_examine(&cpu, 0x0000);
 }
+
+uint8_t mode = STOP; 
+
+uint8_t cmd_state = 0;
+uint8_t last_cmd_state = 0;
+long last_debounce = 0;
 
 void loop()
 {
-	i8080_cycle(&cpu);
+	uint16_t address;
+	uint8_t cmd;
+
+	if(mode == STOP)
+	{
+		read_switches(&address, &cmd);
+	
+		if(cmd != last_cmd_state)
+		{
+			last_debounce = millis();
+		}
+	
+		if((millis() - last_debounce) > 50)
+		{
+			if(cmd != cmd_state)
+			{
+				cmd_state = cmd;
+				if(cmd & SINGLE_STEP)
+				{
+					i8080_cycle(&cpu);
+				}
+				if(cmd & EXAMINE)
+				{
+					i8080_examine(&cpu, address);
+				}
+				if(cmd & EXAMINE_NEXT)
+				{
+					i8080_examine_next(&cpu);
+				}
+				if(cmd & DEPOSIT)
+				{
+					i8080_deposit(&cpu, address & 0xff);
+				}
+				if(cmd & DEPOSIT_NEXT)
+				{
+					i8080_deposit_next(&cpu, address & 0xff);
+				}
+				if(cmd & RUN_CMD)
+				{
+					mode = RUN;
+				}
+			}
+		}
+	
+		last_cmd_state = cmd;
+	}
+	else
+	{
+		i8080_cycle(&cpu);
+	}
 }
