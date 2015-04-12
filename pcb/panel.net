@@ -1,11 +1,11 @@
 (export (version D)
   (design
-    (source G:/code/altair8800/pcb/panel.sch)
-    (date "3/31/2015 9:58:24 PM")
+    (source G:/code/hardware/altair8800/panel.sch)
+    (date "2015-04-12 11:05:48")
     (tool "Eeschema (after 2015-mar-04 BZR unknown)-product")
     (sheet (number 1) (name /) (tstamps /)
       (title_block
-        (title "Ardair 8800 Front Panel")
+        (title "Arduair 8800 Front Panel")
         (company)
         (rev 1)
         (date "Monday, March 30, 2015")
@@ -544,7 +544,7 @@
       (sheetpath (names /) (tstamps /))
       (tstamp 551EFF4A))
     (comp (ref R33)
-      (value 10K)
+      (value 220R)
       (footprint Resistors_ThroughHole:Resistor_Horizontal_RM10mm)
       (libsource (lib device) (part R))
       (sheetpath (names /) (tstamps /))
@@ -649,6 +649,15 @@
       (pins
         (pin (num 1) (name A) (type passive))
         (pin (num 2) (name K) (type passive))))
+    (libpart (lib device) (part SWITCH_INV)
+      (description "Switch inverseur")
+      (fields
+        (field (name Reference) SW)
+        (field (name Value) SWITCH_INV))
+      (pins
+        (pin (num 1) (name 1) (type passive))
+        (pin (num 2) (name 2) (type passive))
+        (pin (num 3) (name 3) (type passive))))
     (libpart (lib device) (part R)
       (description Resistor)
       (footprints
@@ -673,15 +682,6 @@
         (pin (num 2) (name 2) (type passive))
         (pin (num 3) (name 3) (type passive))
         (pin (num 4) (name 4) (type passive))))
-    (libpart (lib device) (part SWITCH_INV)
-      (description "Switch inverseur")
-      (fields
-        (field (name Reference) SW)
-        (field (name Value) SWITCH_INV))
-      (pins
-        (pin (num 1) (name 1) (type passive))
-        (pin (num 2) (name 2) (type passive))
-        (pin (num 3) (name 3) (type passive))))
     (libpart (lib conn) (part CONN_01X13)
       (footprints
         (fp Pin_Header_Straight_1X13)
@@ -789,7 +789,7 @@
     (library (logical 74xx)
       (uri "C:\\Program Files\\KiCad\\share\\kicad\\library\\74xx.lib"))
     (library (logical panel-cache)
-      (uri G:\code\altair8800\pcb\panel-cache.lib)))
+      (uri G:\code\hardware\altair8800\panel-cache.lib)))
   (nets
     (net (code 1) (name "Net-(D27-Pad2)")
       (node (ref D27) (pin 2))
