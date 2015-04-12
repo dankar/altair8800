@@ -13,6 +13,8 @@ The build for Arduino Uno is the most up to date. It should work to run "./build
 
 arduino-mk is used by the makefile.
 
+The code will look for certain files on the SD card. "88dskrom.bin" is a disk bootloader which will be loaded to offset 0xff00 in memory. "disk1.bin" and "disk2.bin" will be used by the 88-DCDD emulator and will act as disk 1 and disk 2 respectively.
+
 Completeness
 ------------
 
