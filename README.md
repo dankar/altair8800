@@ -27,3 +27,9 @@ Hardware
 
 A front panel has been designed and is available as a KiCad project under the PCB folder. The front panel is basically a bunch of shift registers for input from the switches and output to the LEDs, as well as a 23LC1024 SPI SRAM chip for memory and a MicroSD reader. Everything is attached on the SPI bus to the Arduino.
 
+Todo
+----
+
+* Separate the Intel 8080 emulator and the Altair 8800 hardware emulation. E.g. make the port IO more abstract instead of Altair 8800 specific.
+* Optimizations
+* RUN/STOP switch enabled when running
