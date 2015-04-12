@@ -1,7 +1,7 @@
 #ifndef _INTEL8080_H_
 #define _INTEL8080_H_
 
-#include <stdint.h>
+#include "types.h"
 
 #define FLAGS_CARRY		0x1
 #define FLAGS_PARITY		0x4

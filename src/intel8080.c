@@ -4,12 +4,12 @@
 #include <stdio.h>
 #include <stdlib.h>
 #ifdef ARDUINO
-#include <Arduino.h>
-#include <SPI.h>
+	#include <Arduino.h>
+	#include <SPI.h>
 #endif
 #include "memory.h"
 #ifdef WIN32
-	#include <Windows.h>
+	#include <windows.h>
 #endif
 
 uint8_t get_parity(uint8_t val)
@@ -200,7 +200,7 @@ void i8080_examine(intel8080_t *cpu, uint16_t address)
 
 void i8080_examine_next(intel8080_t *cpu)
 {
-	cpu->data_bus = OP_NOP;
+	cpu->data_bus = 0x00;
 	i8080_cycle(cpu);
 }
 
@@ -1029,122 +1029,253 @@ void i8080_cycle(intel8080_t *cpu)
 	i8080_fetch_next_op(cpu);
 
 	op_code = cpu->current_op_code = cpu->data_bus;
-
-	if(ISOP(MOV, op_code))
-		i8080_mov(cpu);
-	else if(ISOP(MVI, op_code))
-		i8080_mvi(cpu);
-	else if(ISOP(LXI, op_code))
-		i8080_lxi(cpu);
-	else if(ISOP(LDA, op_code))
-		i8080_lda(cpu);
-	else if(ISOP(STA, op_code))
-		i8080_sta(cpu);
-	else if(ISOP(LHLD, op_code))
-		i8080_lhld(cpu);
-	else if(ISOP(SHLD, op_code))
-		i8080_shld(cpu);
-	else if(ISOP(LDAX, op_code))
-		i8080_ldax(cpu);
-	else if(ISOP(STAX, op_code))
-		i8080_stax(cpu);
-	else if(ISOP(XCHG, op_code))
-		i8080_xchg(cpu);
-	else if(ISOP(ADD, op_code))
-		i8080_add(cpu);
-	else if(ISOP(ADI, op_code))
-		i8080_adi(cpu);
-	else if(ISOP(ADC, op_code))
-		i8080_adc(cpu);
-	else if(ISOP(ACI, op_code))
-		i8080_aci(cpu);
-	else if(ISOP(SUB, op_code))
-		i8080_sub(cpu);
-	else if(ISOP(SUI, op_code))
-		i8080_sui(cpu);
-	else if(ISOP(SBB, op_code))
-		i8080_sbb(cpu);
-	else if(ISOP(SBI, op_code))
-		i8080_sbi(cpu);
-	else if(ISOP(INR, op_code))
-		i8080_inr(cpu);
-	else if(ISOP(DCR, op_code))
-		i8080_dcr(cpu);
-	else if(ISOP(INX, op_code))
-		i8080_inx(cpu);
-	else if(ISOP(DCX, op_code))
-		i8080_dcx(cpu);
-	else if(ISOP(DAD, op_code))
-		i8080_dad(cpu);
-	else if(ISOP(ANA, op_code))
-		i8080_ana(cpu);
-	else if(ISOP(ANI, op_code))
-		i8080_ani(cpu);
-	else if(ISOP(ORA, op_code))
-		i8080_ora(cpu);
-	else if(ISOP(ORI, op_code))
-		i8080_ori(cpu);
-	else if(ISOP(XRA, op_code))
-		i8080_xra(cpu);
-	else if(ISOP(XRI, op_code))
-		i8080_xri(cpu);
-	else if(ISOP(EI, op_code))
-		i8080_ei(cpu);
-	else if(ISOP(DI, op_code))
-		i8080_di(cpu);
-	else if(ISOP(XTHL, op_code))
-		i8080_xthl(cpu);
-	else if(ISOP(SPHL, op_code))
-		i8080_sphl(cpu);
-	else if(ISOP(IN, op_code))
-		i8080_in(cpu);
-	else if(ISOP(OUT, op_code))
-		i8080_out(cpu);
-	else if(ISOP(PUSH, op_code))
-		i8080_push(cpu);
-	else if(ISOP(POP, op_code))
-		i8080_pop(cpu);
-	else if(ISOP(RLC, op_code))
-		i8080_rlc(cpu);
-	else if(ISOP(RRC, op_code))
-		i8080_rrc(cpu);
-	else if(ISOP(RAL, op_code))
-		i8080_ral(cpu);
-	else if(ISOP(RAR, op_code))
-		i8080_rar(cpu);
-	else if(ISOP(JCCC, op_code))
-		i8080_jccc(cpu);
-	else if(ISOP(JMP, op_code) || op_code == 0xcb)
-		i8080_jmp(cpu);
-	else if(ISOP(NOP, op_code) || op_code == 0x10 || op_code == 0x08|| op_code == 0x18 || op_code == 0x20 || op_code == 0x28 || op_code == 0x30 || op_code == 0x38)
-		i8080_nop(cpu);
-	else if(ISOP(RET, op_code) || op_code == 0xD9)
-		i8080_ret(cpu);
-	else if(ISOP(RCCC, op_code))
-		i8080_rccc(cpu);
-	else if(ISOP(CALL, op_code) || op_code == 0xFD)
-		i8080_call(cpu);
-	else if(ISOP(RST, op_code))
-		i8080_rst(cpu);
-	else if(ISOP(CMP, op_code))
-		i8080_cmp(cpu);
-	else if(ISOP(CPI, op_code))
-		i8080_cpi(cpu);
-	else if(ISOP(CCCC, op_code))
-		i8080_cccc(cpu);
-	else if(ISOP(STC, op_code))
-		i8080_stc(cpu);
-	else if(ISOP(CMC, op_code))
-		i8080_cmc(cpu);
-	else if(ISOP(CMA, op_code))
-		i8080_cma(cpu);
-	else if(ISOP(PCHL, op_code))
-		i8080_pchl(cpu);
-	else if(ISOP(DAA, op_code))
-		i8080_daa(cpu);
-	else
+	switch(op_code)
 	{
-		//printf("Unknown opcode!\n");
-		while(1);
+		case 0x00: i8080_nop(cpu); break;
+		case 0x01: i8080_lxi(cpu); break;
+		case 0x02: i8080_stax(cpu); break;
+		case 0x03: i8080_inx(cpu); break;
+		case 0x04: i8080_inr(cpu); break;
+		case 0x05: i8080_dcr(cpu); break;
+		case 0x06: i8080_mvi(cpu); break;
+		case 0x07: i8080_rlc(cpu); break;
+		case 0x09: i8080_dad(cpu); break;
+		case 0x0a: i8080_ldax(cpu); break;
+		case 0x0b: i8080_dcx(cpu); break;
+		case 0x0c: i8080_inr(cpu); break;
+		case 0x0d: i8080_dcr(cpu); break;
+		case 0x0e: i8080_mvi(cpu); break;
+		case 0x0f: i8080_rrc(cpu); break;
+		case 0x11: i8080_lxi(cpu); break;
+		case 0x12: i8080_stax(cpu); break;
+		case 0x13: i8080_inx(cpu); break;
+		case 0x14: i8080_inr(cpu); break;
+		case 0x15: i8080_dcr(cpu); break;
+		case 0x16: i8080_mvi(cpu); break;
+		case 0x17: i8080_ral(cpu); break;
+		case 0x19: i8080_dad(cpu); break;
+		case 0x1a: i8080_ldax(cpu); break;
+		case 0x1b: i8080_dcx(cpu); break;
+		case 0x1c: i8080_inr(cpu); break;
+		case 0x1d: i8080_dcr(cpu); break;
+		case 0x1e: i8080_mvi(cpu); break;
+		case 0x1f: i8080_rar(cpu); break;
+//		case 0x20: i8080_rim(cpu); break;
+		case 0x21: i8080_lxi(cpu); break;
+		case 0x22: i8080_shld(cpu); break;
+		case 0x23: i8080_inx(cpu); break;
+		case 0x24: i8080_inr(cpu); break;
+		case 0x25: i8080_dcr(cpu); break;
+		case 0x26: i8080_mvi(cpu); break;
+		case 0x27: i8080_daa(cpu); break;
+		case 0x29: i8080_dad(cpu); break;
+		case 0x2a: i8080_lhld(cpu); break;
+		case 0x2b: i8080_dcx(cpu); break;
+		case 0x2c: i8080_inr(cpu); break;
+		case 0x2d: i8080_dcr(cpu); break;
+		case 0x2e: i8080_mvi(cpu); break;
+		case 0x2f: i8080_cma(cpu); break;
+//		case 0x30: i8080_sim(cpu); break;
+		case 0x31: i8080_lxi(cpu); break;
+		case 0x32: i8080_sta(cpu); break;
+		case 0x33: i8080_inx(cpu); break;
+		case 0x34: i8080_inr(cpu); break;
+		case 0x35: i8080_dcr(cpu); break;
+		case 0x36: i8080_mvi(cpu); break;
+		case 0x37: i8080_stc(cpu); break;
+		case 0x39: i8080_dad(cpu); break;
+		case 0x3a: i8080_lda(cpu); break;
+		case 0x3b: i8080_dcx(cpu); break;
+		case 0x3c: i8080_inr(cpu); break;
+		case 0x3d: i8080_dcr(cpu); break;
+		case 0x3e: i8080_mvi(cpu); break;
+		case 0x3f: i8080_cmc(cpu); break;
+		case 0x40: i8080_mov(cpu); break;
+		case 0x41: i8080_mov(cpu); break;
+		case 0x42: i8080_mov(cpu); break;
+		case 0x43: i8080_mov(cpu); break;
+		case 0x44: i8080_mov(cpu); break;
+		case 0x45: i8080_mov(cpu); break;
+		case 0x46: i8080_mov(cpu); break;
+		case 0x47: i8080_mov(cpu); break;
+		case 0x48: i8080_mov(cpu); break;
+		case 0x49: i8080_mov(cpu); break;
+		case 0x4a: i8080_mov(cpu); break;
+		case 0x4b: i8080_mov(cpu); break;
+		case 0x4c: i8080_mov(cpu); break;
+		case 0x4d: i8080_mov(cpu); break;
+		case 0x4e: i8080_mov(cpu); break;
+		case 0x4f: i8080_mov(cpu); break;
+		case 0x50: i8080_mov(cpu); break;
+		case 0x51: i8080_mov(cpu); break;
+		case 0x52: i8080_mov(cpu); break;
+		case 0x53: i8080_mov(cpu); break;
+		case 0x54: i8080_mov(cpu); break;
+		case 0x55: i8080_mov(cpu); break;
+		case 0x56: i8080_mov(cpu); break;
+		case 0x57: i8080_mov(cpu); break;
+		case 0x58: i8080_mov(cpu); break;
+		case 0x59: i8080_mov(cpu); break;
+		case 0x5a: i8080_mov(cpu); break;
+		case 0x5b: i8080_mov(cpu); break;
+		case 0x5c: i8080_mov(cpu); break;
+		case 0x5d: i8080_mov(cpu); break;
+		case 0x5e: i8080_mov(cpu); break;
+		case 0x5f: i8080_mov(cpu); break;
+		case 0x60: i8080_mov(cpu); break;
+		case 0x61: i8080_mov(cpu); break;
+		case 0x62: i8080_mov(cpu); break;
+		case 0x63: i8080_mov(cpu); break;
+		case 0x64: i8080_mov(cpu); break;
+		case 0x65: i8080_mov(cpu); break;
+		case 0x66: i8080_mov(cpu); break;
+		case 0x67: i8080_mov(cpu); break;
+		case 0x68: i8080_mov(cpu); break;
+		case 0x69: i8080_mov(cpu); break;
+		case 0x6a: i8080_mov(cpu); break;
+		case 0x6b: i8080_mov(cpu); break;
+		case 0x6c: i8080_mov(cpu); break;
+		case 0x6d: i8080_mov(cpu); break;
+		case 0x6e: i8080_mov(cpu); break;
+		case 0x6f: i8080_mov(cpu); break;
+		case 0x70: i8080_mov(cpu); break;
+		case 0x71: i8080_mov(cpu); break;
+		case 0x72: i8080_mov(cpu); break;
+		case 0x73: i8080_mov(cpu); break;
+		case 0x74: i8080_mov(cpu); break;
+		case 0x75: i8080_mov(cpu); break;
+//		case 0x76: i8080_hlt(cpu); break;
+		case 0x77: i8080_mov(cpu); break;
+		case 0x78: i8080_mov(cpu); break;
+		case 0x79: i8080_mov(cpu); break;
+		case 0x7a: i8080_mov(cpu); break;
+		case 0x7b: i8080_mov(cpu); break;
+		case 0x7c: i8080_mov(cpu); break;
+		case 0x7d: i8080_mov(cpu); break;
+		case 0x7e: i8080_mov(cpu); break;
+		case 0x7f: i8080_mov(cpu); break;
+		case 0x80: i8080_add(cpu); break;
+		case 0x81: i8080_add(cpu); break;
+		case 0x82: i8080_add(cpu); break;
+		case 0x83: i8080_add(cpu); break;
+		case 0x84: i8080_add(cpu); break;
+		case 0x85: i8080_add(cpu); break;
+		case 0x86: i8080_add(cpu); break;
+		case 0x87: i8080_add(cpu); break;
+		case 0x88: i8080_adc(cpu); break;
+		case 0x89: i8080_adc(cpu); break;
+		case 0x8a: i8080_adc(cpu); break;
+		case 0x8b: i8080_adc(cpu); break;
+		case 0x8c: i8080_adc(cpu); break;
+		case 0x8d: i8080_adc(cpu); break;
+		case 0x8e: i8080_adc(cpu); break;
+		case 0x8f: i8080_adc(cpu); break;
+		case 0x90: i8080_sub(cpu); break;
+		case 0x91: i8080_sub(cpu); break;
+		case 0x92: i8080_sub(cpu); break;
+		case 0x93: i8080_sub(cpu); break;
+		case 0x94: i8080_sub(cpu); break;
+		case 0x95: i8080_sub(cpu); break;
+		case 0x96: i8080_sub(cpu); break;
+		case 0x97: i8080_sub(cpu); break;
+		case 0x98: i8080_sbb(cpu); break;
+		case 0x99: i8080_sbb(cpu); break;
+		case 0x9a: i8080_sbb(cpu); break;
+		case 0x9b: i8080_sbb(cpu); break;
+		case 0x9c: i8080_sbb(cpu); break;
+		case 0x9d: i8080_sbb(cpu); break;
+		case 0x9e: i8080_sbb(cpu); break;
+		case 0x9f: i8080_sbb(cpu); break;
+		case 0xa0: i8080_ana(cpu); break;
+		case 0xa1: i8080_ana(cpu); break;
+		case 0xa2: i8080_ana(cpu); break;
+		case 0xa3: i8080_ana(cpu); break;
+		case 0xa4: i8080_ana(cpu); break;
+		case 0xa5: i8080_ana(cpu); break;
+		case 0xa6: i8080_ana(cpu); break;
+		case 0xa7: i8080_ana(cpu); break;
+		case 0xa8: i8080_xra(cpu); break;
+		case 0xa9: i8080_xra(cpu); break;
+		case 0xaa: i8080_xra(cpu); break;
+		case 0xab: i8080_xra(cpu); break;
+		case 0xac: i8080_xra(cpu); break;
+		case 0xad: i8080_xra(cpu); break;
+		case 0xae: i8080_xra(cpu); break;
+		case 0xaf: i8080_xra(cpu); break;
+		case 0xb0: i8080_ora(cpu); break;
+		case 0xb1: i8080_ora(cpu); break;
+		case 0xb2: i8080_ora(cpu); break;
+		case 0xb3: i8080_ora(cpu); break;
+		case 0xb4: i8080_ora(cpu); break;
+		case 0xb5: i8080_ora(cpu); break;
+		case 0xb6: i8080_ora(cpu); break;
+		case 0xb7: i8080_ora(cpu); break;
+		case 0xb8: i8080_cmp(cpu); break;
+		case 0xb9: i8080_cmp(cpu); break;
+		case 0xba: i8080_cmp(cpu); break;
+		case 0xbb: i8080_cmp(cpu); break;
+		case 0xbc: i8080_cmp(cpu); break;
+		case 0xbd: i8080_cmp(cpu); break;
+		case 0xbe: i8080_cmp(cpu); break;
+		case 0xbf: i8080_cmp(cpu); break;
+		case 0xc0: i8080_rccc(cpu); break;
+		case 0xc1: i8080_pop(cpu); break;
+		case 0xc2: i8080_jccc(cpu); break;
+		case 0xc3: i8080_jmp(cpu); break;
+		case 0xc4: i8080_cccc(cpu); break;
+		case 0xc5: i8080_push(cpu); break;
+		case 0xc6: i8080_adi(cpu); break;
+		case 0xc7: i8080_rst(cpu); break;
+		case 0xc8: i8080_rccc(cpu); break;
+		case 0xc9: i8080_ret(cpu); break;
+		case 0xca: i8080_jccc(cpu); break;
+		case 0xcc: i8080_cccc(cpu); break;
+		case 0xcd: i8080_call(cpu); break;
+		case 0xce: i8080_aci(cpu); break;
+		case 0xcf: i8080_rst(cpu); break;
+		case 0xd0: i8080_rccc(cpu); break;
+		case 0xd1: i8080_pop(cpu); break;
+		case 0xd2: i8080_jccc(cpu); break;
+		case 0xd3: i8080_out(cpu); break;
+		case 0xd4: i8080_cccc(cpu); break;
+		case 0xd5: i8080_push(cpu); break;
+		case 0xd6: i8080_sui(cpu); break;
+		case 0xd7: i8080_rst(cpu); break;
+		case 0xd8: i8080_rccc(cpu); break;
+		case 0xda: i8080_jccc(cpu); break;
+		case 0xdb: i8080_in(cpu); break;
+		case 0xdc: i8080_cccc(cpu); break;
+		case 0xde: i8080_sbi(cpu); break;
+		case 0xdf: i8080_rst(cpu); break;
+		case 0xe0: i8080_rccc(cpu); break;
+		case 0xe1: i8080_pop(cpu); break;
+		case 0xe2: i8080_jccc(cpu); break;
+		case 0xe3: i8080_xthl(cpu); break;
+		case 0xe4: i8080_cccc(cpu); break;
+		case 0xe5: i8080_push(cpu); break;
+		case 0xe6: i8080_ani(cpu); break;
+		case 0xe7: i8080_rst(cpu); break;
+		case 0xe8: i8080_rccc(cpu); break;
+		case 0xe9: i8080_pchl(cpu); break;
+		case 0xea: i8080_jccc(cpu); break;
+		case 0xeb: i8080_xchg(cpu); break;
+		case 0xec: i8080_cccc(cpu); break;
+		case 0xee: i8080_xri(cpu); break;
+		case 0xef: i8080_rst(cpu); break;
+		case 0xf0: i8080_rccc(cpu); break;
+		case 0xf1: i8080_pop(cpu); break;
+		case 0xf2: i8080_jccc(cpu); break;
+		case 0xf3: i8080_di(cpu); break;
+		case 0xf4: i8080_cccc(cpu); break;
+		case 0xf5: i8080_push(cpu); break;
+		case 0xf6: i8080_ori(cpu); break;
+		case 0xf7: i8080_rst(cpu); break;
+		case 0xf8: i8080_rccc(cpu); break;
+		case 0xf9: i8080_sphl(cpu); break;
+		case 0xfa: i8080_jccc(cpu); break;
+		case 0xfb: i8080_ei(cpu); break;
+		case 0xfc: i8080_cccc(cpu); break;
+		case 0xfe: i8080_cpi(cpu); break;
+		case 0xff: i8080_rst(cpu); break;
 	}
 }
