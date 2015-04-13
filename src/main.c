@@ -119,6 +119,11 @@ void load_mem_file(const char* filename, size_t offset)
 	fclose(fp);
 }
 
+uint8_t sense()
+{
+	return 0x00;
+}
+
 int main(int argc, char *argv[])
 {
 	uint32_t counter = 0;
@@ -186,7 +191,7 @@ int main(int argc, char *argv[])
 	disk_controller.write = write;
 	disk_controller.sector = sector;
 
-	i8080_reset(&cpu, term_in, term_out, &disk_controller);
+	i8080_reset(&cpu, term_in, term_out, sense, &disk_controller);
 
 
 	load_mem_file("software/ROMs/DBL.bin", 0xff00);
