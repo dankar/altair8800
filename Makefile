@@ -8,4 +8,4 @@ OBJECTS=$(patsubst %.c,%.o,$(SOURCES))
 	$(CC) -c -o $@ $< $(CFLAGS)
 
 altair8800: $(OBJECTS)
-	$(CC) -o $@ $^ $(CFLAGS)
+	$(CC) -o $@ $^ $(CFLAGS) -lwiringPi

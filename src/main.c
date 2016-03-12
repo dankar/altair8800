@@ -9,13 +9,14 @@
 	// socket
 	#include <sys/types.h>
 	#include <sys/socket.h>
-    #include <netinet/in.h>
-    #include <netinet/ip.h>
+	#include <netinet/in.h>
+	#include <netinet/ip.h>
 	#include <sys/ioctl.h>
 	#include <fcntl.h>
 
 	// strcat
 	#include <string.h>
+	#include "pi_panel.h"
 #endif
 
 int sock;
@@ -135,6 +136,10 @@ int main(int argc, char *argv[])
 	uint16_t breakpoint = 0x0;
 	disk_controller_t disk_controller;
 	intel8080_t cpu;
+
+	rpi_init();
+
+	write_leds(0, 0, 0xff00);
 
 #ifdef WIN32
 	WSADATA wsaData;
