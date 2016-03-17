@@ -17,6 +17,7 @@
 	// strcat
 	#include <string.h>
 	#include "pi_panel.h"
+	#include <wiringPi.h>
 #endif
 
 int sock;
@@ -60,8 +61,6 @@ uint8_t term_in()
 	}
 	else
 	{
-		if(b == 10)
-			b = 13;
 		return b;
 	}
 }
@@ -70,17 +69,11 @@ void term_out(uint8_t b)
 {
 	b = b & 0x7f;
 	send(client_sock, (char*)&b, 1, 0);
-	//WriteConsoleA(console, &b, 1, &written, NULL);
 }
 
-/*port_out disk_select;
-port_in	disk_status;
-port_out disk_function;
-port_in sector;
-port_out write;
-port_in read;*/
-
 uint8_t memory[64*1024];
+uint8_t cmd_switches;
+uint16_t bus_switches;
 
 void load_file(intel8080_t *cpu)
 {
@@ -122,7 +115,16 @@ void load_mem_file(const char* filename, size_t offset)
 
 uint8_t sense()
 {
-	return 0x00;
+	return bus_switches >> 8;
+}
+
+void load_memory()
+{
+        load_mem_file("software/ROMs/DBL.bin", 0xff00);
+        load_mem_file("software/ROMs/8K Basic/8kBas_e0.bin", 0xe000);
+        load_mem_file("software/ROMs/8K Basic/8kBas_e8.bin", 0xe800);
+        load_mem_file("software/ROMs/8K Basic/8kBas_f0.bin", 0xf000);
+        load_mem_file("software/ROMs/8K Basic/8kBas_f8.bin", 0xf800);
 }
 
 int main(int argc, char *argv[])
@@ -138,8 +140,6 @@ int main(int argc, char *argv[])
 	intel8080_t cpu;
 
 	rpi_init();
-
-	write_leds(0, 0, 0xff00);
 
 #ifdef WIN32
 	WSADATA wsaData;
@@ -198,29 +198,91 @@ int main(int argc, char *argv[])
 
 	i8080_reset(&cpu, term_in, term_out, sense, &disk_controller);
 
-
-	load_mem_file("software/ROMs/DBL.bin", 0xff00);
-
-	load_mem_file("software/ROMs/8K Basic/8kBas_e0.bin", 0xe000);
-	load_mem_file("software/ROMs/8K Basic/8kBas_e8.bin", 0xe800);
-	load_mem_file("software/ROMs/8K Basic/8kBas_f0.bin", 0xf000);
-	load_mem_file("software/ROMs/8K Basic/8kBas_f8.bin", 0xf800);
+	load_memory();
 
 	// Mount diskette 1 (CP/M OS) and 2 (Tools)
 	disk_drive.disk1.fp = fopen("software/CPM 2.2/cpm63k.dsk", "r+b");
 	//disk_drive.disk1.fp = fopen("software/BASIC/Floppy Disk/Disk Basic Ver 300-5-F.dsk", "r+b");
-	disk_drive.disk2.fp = fopen("software/CPM 2.2/zork.dsk", "r+b");
+	disk_drive.disk2.fp = fopen("software/CPM 2.2/games.dsk", "r+b");
 	//disk_drive.disk2.fp = fopen("software/BASIC/Floppy Disk/Games on 300-5-F.dsk", "r+b");
 	disk_drive.nodisk.status = 0xff;
 
-	i8080_examine(&cpu, 0xff00); // ff00 loads from disk, e000 loads basic
+	i8080_examine(&cpu, 0x0000); // ff00 loads from disk, e000 loads basic
+
+	uint8_t cmd_state;
+	uint8_t last_cmd_state = 0;
+	uint8_t mode = STOP;
+	uint32_t last_debounce = 0;
+
+	uint32_t cycle_counter = 0;
 
 	while(1)
 	{
-		//if(cpu.registers.pc == breakpoint)
-		//	__asm int 3;
-		i8080_cycle(&cpu);
-		//dump_regs(&cpu);
+		if(mode == RUN)
+		{
+			i8080_cycle(&cpu);
+			cycle_counter++;
+			if(cycle_counter % 10 == 0)
+				read_write_panel(0, cpu.data_bus, cpu.address_bus, &bus_switches, &cmd_switches, 1);
+		}
+		else
+		{
+			read_write_panel(0, cpu.data_bus, cpu.address_bus, &bus_switches, &cmd_switches, 1);
+		}
+
+		if(cmd_switches != last_cmd_state)
+		{
+			last_debounce = millis();
+		}
+
+		if((millis() - last_debounce) > 50)
+		{
+			if(cmd_switches != cmd_state)
+			{
+				cmd_state = cmd_switches;
+				if(mode == STOP)
+				{
+					if(cmd_switches & STOP)
+					{
+						load_memory();
+						i8080_examine(&cpu, 0);
+					}
+					if(cmd_switches & SINGLE_STEP)
+					{
+						i8080_cycle(&cpu);
+					}
+					if(cmd_switches & EXAMINE)
+					{
+						printf("Examine %x\n", bus_switches);
+						i8080_examine(&cpu, bus_switches);
+					}
+					if(cmd_switches & EXAMINE_NEXT)
+					{
+						i8080_examine_next(&cpu);
+					}
+					if(cmd_switches & DEPOSIT)
+					{
+						i8080_deposit(&cpu, bus_switches & 0xff);
+					}
+					if(cmd_switches & DEPOSIT_NEXT)
+					{
+						i8080_deposit(&cpu, bus_switches & 0xff);
+					}
+					if(cmd_switches & RUN_CMD)
+					{
+						mode = RUN;
+					}
+				}
+				if(mode == RUN)
+				{
+					if(cmd_switches & STOP_CMD)
+					{
+						mode = STOP;
+					}
+				}
+			}
+		}
+		last_cmd_state = cmd_switches;
 	}
 
 	return 0;

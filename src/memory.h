@@ -55,6 +55,8 @@ inline void write8(uint16_t address, uint8_t val)
 #else
 #include "pi_panel.h"
 extern uint8_t memory[64*1024];
+extern uint8_t cmd_switches;
+extern uint16_t bus_switches;
 
 uint8_t read8(uint16_t address)
 {
@@ -64,8 +66,6 @@ uint8_t read8(uint16_t address)
 	else
 		data = 0;
 
-	write_leds(0, data, address);
-
         return data;
 }
 
@@ -73,8 +73,6 @@ void write8(uint16_t address, uint8_t val)
 {
         if(address < 64*1024)
                 memory[address] = val;
-
-	write_leds(0, val, address);
 }
 
 #endif

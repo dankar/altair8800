@@ -9,3 +9,7 @@ OBJECTS=$(patsubst %.c,%.o,$(SOURCES))
 
 altair8800: $(OBJECTS)
 	$(CC) -o $@ $^ $(CFLAGS) -lwiringPi
+
+clean:
+	rm $(OBJECTS) altair8800
+
