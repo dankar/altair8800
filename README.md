@@ -29,6 +29,16 @@ Hardware
 
 A front panel has been designed and is available as a KiCad project under the PCB folder. The front panel is basically a bunch of shift registers for input from the switches and output to the LEDs, as well as a 23LC1024 SPI SRAM chip for memory and a MicroSD reader. Everything is attached on the SPI bus to the Arduino.
 
+Known bugs
+----------
+
+The current hardware implementation has a bug in the MicroSD card holder-area. The pins are connected as they should be for a regular size SD card and not a MicroSD. If you want to use the panel with a MicroSD card you need to fix this.
+
+Raspberry Pi
+------------
+
+The current code in the repo now supports running on Raspberry Pi instead of Arduino. This means that the MicroSD slot is not necessary any more, as well as the SRAM chip. The code runs faster on a Raspberry Pi as well. I would recommend this route for anyone interested in their own panel.
+
 Todo
 ----
 
