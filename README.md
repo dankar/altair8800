@@ -6,6 +6,8 @@ What is this?
 
 What started as a Intel 8080 emulator turned into a Altair 8800 emulator with associated hardware for a front panel.
 
+An updated version of this project is available at https://github.com/dankar/nanoaltair8800
+
 Building
 --------
 
